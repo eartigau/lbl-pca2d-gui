@@ -132,6 +132,22 @@ def build(state: dict) -> dict:
         if other != target and other not in templates and not os.path.isdir(
                 os.path.join(data_dir, "science", other)):
             errors.append(say("err_no_comparison", target, other))
+    # FOLDERS FETCHED FROM AN ARCHIVE (archives.py): their reader, the
+    #   files LBL reads in them and its parameters, from what they came
+    #   from; a source other than theirs would read them wrongly
+    from .archives import provenance
+    origins = [provenance(os.path.join(data_dir, "science", t))
+               for t in targets]
+    found = [o for o in origins if o]
+    for target, origin in zip(targets, origins):
+        if origin and (origin.get("lbl") != instrument
+                       or origin.get("source") != str(source)):
+            errors.append(say("err_archive_source", target, origin["lbl"],
+                              origin["source"]))
+    if found and not errors:
+        rparams.setdefault("INPUT_FILE", found[0].get("input"))
+        for key, value in (found[0].get("params") or {}).items():
+            rparams.setdefault(key, value)
     # the LBL switches
     lbl = state.get("lbl") or {}
     telluclean = (sources.get(str(source)) or {}).get("telluclean", False)

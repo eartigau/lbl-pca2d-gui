@@ -22,7 +22,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import __version__, backdrop, cleanup, history, i18n, lblinfo, runner
-from . import targets
+from . import archives, targets
 from . import wrapgen, wrapload
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -38,6 +38,7 @@ class Context:
 
     def __init__(self, data_dir: str = ""):
         self.scanner = targets.Scanner()
+        self.archives = archives.Archives()
         self.runner = runner.Runner()
         self.lock = threading.Lock()
         self.state = self.load_state()
@@ -180,6 +181,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(lblinfo.bases(
                     data_dir, query.get("instrument", ""),
                     query.get("source", "")))
+            if route == "/api/archive":
+                return self._json(ctx.archives.status())
             if route == "/api/vetted":
                 return self._json(lblinfo.vetted(query.get("instrument", "")))
             if route == "/api/templates":
@@ -218,6 +221,15 @@ class Handler(BaseHTTPRequestHandler):
                     # files: on disk; read: in the index so far
                     row.update(name=name, read=row["files"], files=on_disk,
                                on_disk=on_disk)
+                    # a folder fetched from an archive: its LBL instrument
+                    #   and source, and the star's Teff when the headers
+                    #   have none
+                    origin = archives.provenance(os.path.join(science, name))
+                    if origin:
+                        row["archive"] = dict(lbl=origin.get("lbl"),
+                                              source=origin.get("source"))
+                        if row.get("teff") is None and origin.get("teff"):
+                            row["teff"] = float(origin["teff"])
                     rows.append(row)
                 return self._json(dict(targets=rows, scan=status,
                                        science="ok", folder=science))
@@ -348,6 +360,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(built)
             if route == "/api/queue":
                 return self._queue(body)
+            if route == "/api/archive/search":
+                data_dir = ctx.allow(body.get("data_dir", "")) \
+                    if body.get("data_dir") else ""
+                return self._json(ctx.archives.start_search(
+                    body.get("target", ""), body.get("instruments"),
+                    data_dir))
+            if route == "/api/archive/fetch":
+                data_dir = ctx.allow(body.get("data_dir", ""))
+                return self._json(ctx.archives.start_fetch(
+                    data_dir, body.get("ids") or []))
+            if route == "/api/archive/stop":
+                ctx.archives.stop_fetch()
+                return self._json(ctx.archives.status())
             if route == "/api/stop":
                 return self._json(dict(ok=ctx.runner.stop(body.get("id",
                                                                    ""))))

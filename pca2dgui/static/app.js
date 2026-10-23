@@ -20,7 +20,7 @@ const DEFAULTS = {
   comparison: {}, teff: {}, lbl: {}, pca2d_on: true, pca2d: {},
   extra: {}, pca2d_extra: {},
   skip_pca2d: null, min_rjd: null, max_rjd: null, resproj: false,
-  name: '', name_auto: true,
+  name: '', name_auto: true, sub: 'local', archive_instruments: null,
 };
 const S = JSON.parse(JSON.stringify(DEFAULTS));
 let T = {};
@@ -215,6 +215,123 @@ function showTab(name) {
   if (name === 'cleanup') measure();
   if (name === 'targets') drawPlots();
   save();
+}
+
+// ── the targets' sub-tabs ───────────────────────────────────────────────
+function showSub(name) {
+  S.sub = name;
+  document.querySelectorAll('#target_subtabs button').forEach((b) => b.classList.toggle('active', b.dataset.sub === name));
+  $('sub-local').hidden = name !== 'local';
+  $('sub-archive').hidden = name !== 'archive';
+  if (name === 'archive') { drawArchiveInstruments(); pollArchive(); }
+  save();
+}
+
+// ── the public archives (archives.py, through koloa) ────────────────────
+const ARCHIVE_INSTRUMENTS = [['SPIROU', 'SPIRou'], ['NIRPS', 'NIRPS'], ['HARPSN', 'HARPS-N'], ['SOPHIE', 'SOPHIE'], ['ESPRESSO', 'ESPRESSO']];
+const BIG_FETCH_MB = 5000;
+let ARCHIVE = null;
+let archiveChosen = new Set();
+let archiveTimer = null;
+const megabytes = (mb) => (mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${Math.round(mb)} MB`);
+
+function drawArchiveInstruments() {
+  const chosen = S.archive_instruments || ARCHIVE_INSTRUMENTS.map(([key]) => key);
+  $('archive_instruments').replaceChildren(...ARCHIVE_INSTRUMENTS.map(([key, label]) => el('label', { class: 'check' },
+    el('input', {
+      type: 'checkbox', checked: chosen.includes(key),
+      onchange: (event) => {
+        const now = new Set(S.archive_instruments || ARCHIVE_INSTRUMENTS.map(([k]) => k));
+        if (event.target.checked) now.add(key); else now.delete(key);
+        S.archive_instruments = [...now];
+        save();
+      },
+    }), label)));
+}
+
+async function archiveSearch() {
+  const target = $('archive_target').value.trim();
+  if (!target) return;
+  archiveChosen = new Set();
+  ARCHIVE = await api.post('/api/archive/search', {
+    target, data_dir: S.data_dir,
+    instruments: S.archive_instruments || ARCHIVE_INSTRUMENTS.map(([key]) => key),
+  });
+  drawArchive();
+  pollArchive();
+}
+
+async function pollArchive() {
+  ARCHIVE = await api.get('/api/archive');
+  drawArchive();
+  const busy = ARCHIVE && (ARCHIVE.search.state === 'running' || ARCHIVE.fetch.state === 'running');
+  clearTimeout(archiveTimer);
+  if (busy) archiveTimer = setTimeout(pollArchive, 1500);
+}
+
+function drawArchive() {
+  if (!ARCHIVE) return;
+  $('archive_koloa').textContent = ARCHIVE.koloa ? t('archive_no_koloa') : '';
+  const search = ARCHIVE.search || {};
+  const fetch = ARCHIVE.fetch || {};
+  $('archive_search').disabled = search.state === 'running' || Boolean(ARCHIVE.koloa);
+  $('archive_star').textContent = search.main
+    ? t('archive_star', search.main, search.teff ? Math.round(search.teff) : '?')
+    : (search.error || '');
+  $('archive_states').replaceChildren(...Object.entries(search.instruments || {}).map(([key, about]) => {
+    const label = (ARCHIVE_INSTRUMENTS.find(([k]) => k === key) || [key, key])[1];
+    const text = about.state === 'searching' ? t('archive_searching')
+      : about.state === 'failed' ? t('archive_failed') : t('archive_found', about.n || 0);
+    return el('span', { class: `chip ${about.state}`, 'data-tip': about.error ? esc(about.error) : null },
+      about.state === 'searching' ? el('span', { class: 'step-icon spin', text: '◐' }) : null, `${label} · ${text}`);
+  }));
+  const rows = search.groups || [];
+  $('archive_wrap').hidden = !rows.length;
+  if (search.state === 'done' && !rows.length && search.main) {
+    $('archive_star').textContent += ` · ${t('archive_nothing', search.main)}`;
+  }
+  const head = el('tr', {}, el('th', {}, ''), ...['col_instrument', 'col_reader', 'col_archive', 'col_files', 'col_have', 'col_size', 'col_folder']
+    .map((key) => el('th', { text: t(key) })));
+  const body = rows.map((row) => el('tr', { class: archiveChosen.has(row.id) ? 'ticked' : '' },
+    el('td', {}, el('input', {
+      type: 'checkbox', checked: archiveChosen.has(row.id), disabled: fetch.state === 'running',
+      onchange: (event) => { if (event.target.checked) archiveChosen.add(row.id); else archiveChosen.delete(row.id); drawArchive(); },
+    })),
+    el('td', { text: row.label }),
+    el('td', { class: 'mono', text: `${row.lbl} · ${row.source}` }),
+    el('td', { class: 'small', text: row.archive }),
+    el('td', { class: 'num', text: row.n }),
+    el('td', { class: 'num', text: row.have || '' }),
+    el('td', { class: 'num', text: row.size_mb ? megabytes(row.size_mb) : '0' }),
+    el('td', { class: 'mono', text: `science/${row.folder}` })));
+  $('archive_table').replaceChildren(el('thead', {}, head), el('tbody', {}, body));
+  const total = rows.filter((row) => archiveChosen.has(row.id)).reduce((sum, row) => sum + (row.size_mb || 0), 0);
+  $('archive_fetch_label').textContent = archiveChosen.size ? t('archive_fetch', megabytes(total)) : t('archive_fetch_none');
+  $('archive_fetch').disabled = !archiveChosen.size || fetch.state === 'running' || !S.data_dir;
+  $('archive_fetch').classList.toggle('running', fetch.state === 'running');
+  $('archive_stop').hidden = fetch.state !== 'running';
+  if (fetch.state === 'running') {
+    $('archive_progress').textContent = t('archive_progress', fetch.current, fetch.done, fetch.total, fetch.failed);
+  } else if (fetch.state === 'done' || fetch.state === 'stopped') {
+    $('archive_progress').textContent = `${t('archive_done', (fetch.folders || []).map((f) => `science/${f}`).join(', '))}${fetch.failed ? ` · ${t('archive_progress', '', fetch.done, fetch.total, fetch.failed)}${fetch.why ? ` (${fetch.why})` : ''}` : ''}`;
+  } else {
+    $('archive_progress').textContent = '';
+  }
+}
+
+async function archiveFetch() {
+  const rows = ((ARCHIVE || {}).search || {}).groups || [];
+  const chosen = rows.filter((row) => archiveChosen.has(row.id));
+  const total = chosen.reduce((sum, row) => sum + (row.size_mb || 0), 0);
+  // more than a few GB: said, and asked
+  if (total > BIG_FETCH_MB && !(await confirmBox(t('archive_big', megabytes(total), `${S.data_dir}/science`)))) return;
+  ARCHIVE = await api.post('/api/archive/fetch', { data_dir: S.data_dir, ids: chosen.map((row) => row.id) });
+  drawArchive();
+  pollArchive();
+  // the new folders appear in My targets as their headers are read
+  const wait = setInterval(async () => {
+    if (!ARCHIVE || ARCHIVE.fetch.state !== 'running') { clearInterval(wait); await loadTargets(); }
+  }, 2000);
 }
 
 // ── instrument and source ───────────────────────────────────────────────
@@ -413,7 +530,20 @@ function toggle(name) {
 //   family than the one chosen (SPIRou spectra run as NIRPS_HE, 2026-10-23)
 const family = (name) => String(name || '').toUpperCase().split('_')[0].replace(/[^A-Z0-9]/g, '');
 async function followTicked() {
-  const found = [...new Set(TARGETS.filter((row) => S.ticked.includes(row.name)).map((row) => guessInstrument(row.instrument)))];
+  // folders fetched from an archive say their reader: instrument and source
+  const ticked = TARGETS.filter((row) => S.ticked.includes(row.name));
+  const readers = [...new Set(ticked.map((row) => (row.archive ? `${row.archive.lbl}|${row.archive.source}` : null)))];
+  if (ticked.length && readers.length === 1 && readers[0]) {
+    const [lbl, source] = readers[0].split('|');
+    if (lbl !== S.instrument || source !== S.source) {
+      S.instrument = lbl; S.instrument_set = true; $('instrument').value = lbl;
+      fillSources(); S.source = source; $('source').value = source;
+      save(); await loadInstrumentThings();
+      $('target_notes').textContent = t('instrument_followed', `${lbl} · ${source}`);
+    }
+    return;
+  }
+  const found = [...new Set(ticked.map((row) => guessInstrument(row.instrument)))];
   if (found.length !== 1 || !found[0] || family(found[0]) === family(S.instrument)) return;
   S.instrument = found[0];
   S.instrument_set = true;
@@ -1208,6 +1338,11 @@ async function init() {
   $('runs_refresh').onclick = loadRuns;
   $('measure').onclick = measure;
   $('best_all').onclick = () => bestMatch(S.ticked);
+  document.querySelectorAll('#target_subtabs button').forEach((b) => { b.onclick = () => showSub(b.dataset.sub); });
+  $('archive_search').onclick = archiveSearch;
+  $('archive_target').onkeydown = (event) => { if (event.key === 'Enter') archiveSearch(); };
+  $('archive_fetch').onclick = archiveFetch;
+  $('archive_stop').onclick = async () => { ARCHIVE = await api.post('/api/archive/stop', {}); drawArchive(); };
   $('delete').onclick = deleteSelected;
 
   await loadInstrumentThings();
@@ -1215,6 +1350,7 @@ async function init() {
   await followTicked();
   setBackdrop();
   showTab(S.tab || 'targets');
+  showSub(S.sub || 'local');
   pollQueue();
   setInterval(pollQueue, 2000);
 }

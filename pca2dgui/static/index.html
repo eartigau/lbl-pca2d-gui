@@ -65,6 +65,35 @@
 
     <!-- TARGETS -->
     <section class="pane span-3" id="pane-targets">
+      <div class="subtabs" id="target_subtabs">
+        <button type="button" data-sub="local" data-t="sub_local"></button>
+        <button type="button" data-sub="archive" data-t="sub_archive"></button>
+      </div>
+      <div id="sub-archive" class="stack" hidden>
+        <div class="card">
+          <div class="row spread">
+            <h2><span data-t="archive_title"></span><span class="info" data-help="archive"></span></h2>
+            <span class="hint small warn-text" id="archive_koloa"></span>
+          </div>
+          <div class="archive-form">
+            <label class="field"><span class="label" data-t="archive_target"></span>
+              <input id="archive_target" type="text" spellcheck="false" autocomplete="off" placeholder="GJ 1, TOI-904, Barnard's star"></label>
+            <div class="field"><span class="label" data-t="archive_instruments"></span><div id="archive_instruments" class="row gap wrap"></div></div>
+            <button type="button" class="button primary" id="archive_search" data-t="archive_search"></button>
+          </div>
+          <p class="small" id="archive_star"></p>
+          <div id="archive_states" class="row gap wrap"></div>
+          <div class="table-wrap" id="archive_wrap" hidden><table class="data" id="archive_table"></table></div>
+          <div class="row spread archive-foot">
+            <span class="hint" id="archive_progress"></span>
+            <span class="row gap">
+              <button type="button" class="button danger" id="archive_stop" data-t="stop" hidden></button>
+              <button type="button" class="launch small-launch" id="archive_fetch" disabled><span id="archive_fetch_label"></span></button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div id="sub-local" class="stack">
       <div class="tiles" id="tiles"></div>
       <div class="pane-grid">
         <div class="card span-2">
@@ -111,6 +140,7 @@
             <p class="hint small" data-t="plot_time_hint"></p>
           </div>
         </div>
+      </div>
       </div>
     </section>
 

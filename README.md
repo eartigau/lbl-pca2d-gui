@@ -16,7 +16,7 @@ shows up in the window without a change here.
 
 | screen | what it does |
 |---|---|
-| Targets | the folders of `DATA_DIR/science/`, read from their headers (spectra, nights, SNR, BERV range, dates, Teff), with the BERV coverage, SNR against BERV and the dates of the ticked ones |
+| Targets | the folders of `DATA_DIR/science/`, read from their headers (spectra, nights, SNR, BERV range, dates, Teff), with the BERV coverage, SNR against BERV and the dates of the ticked ones; and **Archive search**: a star's public spectra that LBL reads (SPIRou at the CADC, NIRPS and ESPRESSO at ESO, HARPS-N at the TNG, SOPHIE at the OHP), found and fetched into `DATA_DIR/science/<star>/` through [koloa](https://github.com/eartigau/koloa) |
 | LBL settings | the template of each target (its own or another star's), its temperature, and LBL's steps |
 | PCA2D settings | the precleaning on or off, and its options: the fit, the observer bases (a frozen one, or saving this fit's), the correction |
 | Run | the wrap as it will run with what is ticked upstream (it can be edited and saved), loading a wrap, the queue, and the live log of a run |
@@ -69,7 +69,10 @@ git clone <this repository> lbl-pca2d-gui
 pip install -e lbl-pca2d-gui
 ```
 
-It needs nothing LBL does not already need (numpy, astropy, pyyaml).
+It needs nothing LBL does not already need (numpy, astropy, pyyaml). The
+archive search needs koloa in the same environment
+(`pip install --no-deps -e koloa`, github.com/eartigau/koloa); without it
+the window says so and the rest works.
 
 ## Use
 
