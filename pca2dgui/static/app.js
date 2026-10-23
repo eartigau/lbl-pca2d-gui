@@ -283,7 +283,7 @@ function drawArchive() {
     const text = about.state === 'searching' ? t('archive_searching')
       : about.state === 'failed' ? t('archive_failed') : t('archive_found', about.n || 0);
     return el('span', { class: `chip ${about.state}`, 'data-tip': about.error ? esc(about.error) : null },
-      about.state === 'searching' ? el('span', { class: 'step-icon spin', text: '◐' }) : null, `${label} · ${text}`);
+      about.state === 'searching' ? el('span', { class: 'ring' }) : null, `${label} · ${text}`);
   }));
   const rows = search.groups || [];
   $('archive_wrap').hidden = !rows.length;
@@ -310,8 +310,16 @@ function drawArchive() {
   $('archive_fetch').disabled = !archiveChosen.size || fetch.state === 'running' || !S.data_dir;
   $('archive_fetch').classList.toggle('running', fetch.state === 'running');
   $('archive_stop').hidden = fetch.state !== 'running';
+  // one bar per instrument and target fetched
+  const target = search.main || search.target || '';
+  $('archive_bars').replaceChildren(...(fetch.bars || []).map((bar) => {
+    const share = bar.total ? Math.min(100, (100 * bar.done) / bar.total) : 100;
+    return el('div', { class: 'bar-row' },
+      el('div', { class: 'bar-text small', text: t('archive_progress', `${bar.label} ${target} (science/${bar.folder})`, bar.done, bar.total, bar.failed) }),
+      el('div', { class: 'bar' }, el('div', { class: `bar-fill${bar.failed ? ' with-failed' : ''}`, style: `width:${share.toFixed(1)}%` })));
+  }));
   if (fetch.state === 'running') {
-    $('archive_progress').textContent = t('archive_progress', fetch.current, fetch.done, fetch.total, fetch.failed);
+    $('archive_progress').textContent = '';
   } else if (fetch.state === 'done' || fetch.state === 'stopped') {
     $('archive_progress').textContent = `${t('archive_done', (fetch.folders || []).map((f) => `science/${f}`).join(', '))}${fetch.failed ? ` · ${t('archive_progress', '', fetch.done, fetch.total, fetch.failed)}${fetch.why ? ` (${fetch.why})` : ''}` : ''}`;
   } else {
@@ -1018,7 +1026,8 @@ function drawSteps(steps, title) {
   holder.replaceChildren(...groups.map((group) => el('div', { class: 'step-group' },
     el('span', { class: 'step-obj mono', text: group.obj }),
     ...group.steps.map((step) => el('span', { class: `step ${step.state || 'pending'}` },
-      el('span', { class: 'step-icon', text: STEP_ICON[step.state || 'pending'] }),
+      step.state === 'running' ? el('span', { class: 'ring' })
+        : el('span', { class: 'step-icon', text: STEP_ICON[step.state || 'pending'] }),
       t(`step_${step.kind}`))))));
 }
 

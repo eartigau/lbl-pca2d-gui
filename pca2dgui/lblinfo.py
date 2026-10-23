@@ -66,10 +66,28 @@ def instruments() -> list:
             rows.append(dict(
                 source=source,
                 input_file=inst.params["INPUT_FILE"] if inst else "*.fits",
-                telluclean=bool(inst.params.get("DO_TELLUCLEAN"))
-                if inst else False))
+                telluclean=_cleans_tellurics(name, inst)))
         out.append(dict(instrument=name, sources=rows))
     return out
+
+
+#: the instruments whose spectra come telluric-corrected (APERO)
+CORRECTED = ("NIRPS", "SPIROU")
+
+
+def _cleans_tellurics(name: str, inst) -> bool:
+    """Whether a wrap cleans the tellurics by default: as LBL's class says
+    (DO_TELLUCLEAN), and for every optical spectrograph (its domain ending
+    short of 1 micron: HARPS, HARPS-N, ESPRESSO, SOPHIE...), whose pipelines
+    leave the telluric lines in; never for NIRPS and SPIRou."""
+    if str(name).upper().split("_")[0] in CORRECTED:
+        return False
+    if inst is None:
+        return False
+    if inst.params.get("DO_TELLUCLEAN"):
+        return True
+    wavemax = getattr(inst, "wavemax", None)
+    return wavemax is not None and float(wavemax) < 1000.0
 
 
 @functools.lru_cache(maxsize=64)

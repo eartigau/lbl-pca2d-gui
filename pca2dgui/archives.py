@@ -195,8 +195,13 @@ class Archives:
             if not groups:
                 return dict(self.status(), error="nothing chosen")
             total = sum(r["n"] - r["have"] for r, _ in groups)
+            # one bar per group: what it is, where, how far
+            bars = [dict(label=r["label"], folder=r["folder"],
+                         total=r["n"] - r["have"], done=0, failed=0)
+                    for r, _ in groups]
             self.fetch = dict(state="running", total=total, done=0,
-                              failed=0, why="", current="", folders=[])
+                              failed=0, why="", current="", folders=[],
+                              bars=bars)
             self._stop = False
         threading.Thread(target=self._fetch, args=(data_dir, groups,
                                                    self.search.get("teff"),
@@ -210,7 +215,7 @@ class Archives:
     def _fetch(self, data_dir, groups, teff, target):
         calib = os.path.join(data_dir, "calib")
         os.makedirs(calib, exist_ok=True)
-        for row, group in groups:
+        for index, (row, group) in enumerate(groups):
             # asked again: a group fetched just before may have taken it
             mine = provenance(os.path.join(data_dir, "science", row["folder"]))
             if mine and (mine.get("lbl"), mine.get("source")) != (
@@ -224,7 +229,11 @@ class Archives:
             todo = [one for one in group["spectra"]
                     if not os.path.exists(os.path.join(science, one["name"]))]
 
-            def get(one, science=science, group=group):
+            with self.lock:
+                self.fetch["bars"][index].update(folder=row["folder"],
+                                                 total=len(todo))
+
+            def get(one, science=science, group=group, index=index):
                 if self._stop:
                     return "stopped"
                 try:
@@ -232,9 +241,12 @@ class Archives:
                 except Exception as exc:                  # noqa: BLE001
                     why = "%s: %s" % (type(exc).__name__, exc)
                 with self.lock:
+                    bar = self.fetch["bars"][index]
                     self.fetch["done"] += 1
+                    bar["done"] += 1
                     if why:
                         self.fetch["failed"] += 1
+                        bar["failed"] += 1
                         self.fetch["why"] = str(why)[:200]
                 return why
 

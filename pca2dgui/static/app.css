@@ -596,13 +596,13 @@ h2 .info { vertical-align: 3px; }
 .step-icon { font-weight: 700; width: 1em; text-align: center; }
 .step.done { color: #12936a; border-color: rgba(18, 147, 106, 0.45); background: rgba(18, 147, 106, 0.08); }
 .step.running { color: var(--text); border-color: #eb6834; box-shadow: 0 0 0 3px rgba(235, 104, 52, 0.18); }
-.step.running .step-icon { color: #eb6834; display: inline-block; animation: step-spin 1.2s linear infinite; }
+
 .step.failed { color: #d03b3b; border-color: rgba(208, 59, 59, 0.55); background: rgba(208, 59, 59, 0.08); }
 .step.stopped { color: #b4700a; border-color: rgba(250, 178, 25, 0.55); }
 :root:not([data-theme="light"]) .step.done { color: var(--good); }
 :root:not([data-theme="light"]) .step.failed { color: var(--bad); }
 @keyframes step-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .step.running .step-icon { animation: none; } }
+
 
 /* ── the targets' sub-tabs, and the archive search ──────────────────── */
 .subtabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--tab-bg); width: fit-content; }
@@ -616,4 +616,24 @@ h2 .info { vertical-align: 3px; }
 .chip.failed { color: #d03b3b; border-color: rgba(208, 59, 59, 0.5); }
 .chip.searching { color: var(--text); border-color: #eb6834; }
 .launch.small-launch { font-size: 1rem; padding: 10px 24px; }
-.spin { display: inline-block; animation: step-spin 1.2s linear infinite; }
+
+/* a ring that turns on its own centre (a glyph like ◐ does not: its box is
+   not square, and it wobbled) */
+.ring {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 0.9em;
+  height: 0.9em;
+  border: 2px solid #eb6834;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.12em;
+  animation: step-spin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .ring { animation: none; } }
+/* the fetch's bars */
+.bars { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.bar-text { margin-bottom: 3px; }
+.bar { height: 8px; border-radius: 999px; background: var(--row-alt); border: 1px solid var(--line); overflow: hidden; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, #12936a, #1baf7a); transition: width 0.4s ease; }
+.bar-fill.with-failed { background: linear-gradient(90deg, #12936a, #eda100); }
