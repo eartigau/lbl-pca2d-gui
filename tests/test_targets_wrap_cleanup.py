@@ -170,6 +170,18 @@ def test_the_wrap_speaks_the_window_language(data_dir):
     assert built["warnings"][0].startswith("pas de température effective")
 
 
+def test_a_vetted_template_the_depot_lacks_is_refused(data_dir, monkeypatch):
+    from pca2dgui import lblinfo
+    entry = lblinfo.vetted("NIRPS_HE")[0]
+    state = _state(data_dir, comparison={"STAR": entry["name"]})
+    monkeypatch.setattr(lblinfo, "vetted_where", lambda d, e: "missing")
+    built = wrapgen.build(state)
+    assert any(entry["file"] in e for e in built["errors"])
+    monkeypatch.setattr(lblinfo, "vetted_where", lambda d, e: "local")
+    assert wrapgen.build(state)["errors"] == []
+    assert wrapgen.build(_state(data_dir, comparison={"STAR": "VETTED_NOBODY"}))["errors"]
+
+
 def test_the_cleanup_deletes_only_what_can_be_remade(data_dir, tmp_path):
     cache = data_dir / "pca2d" / "cache" / "cube_x"
     cache.mkdir(parents=True)

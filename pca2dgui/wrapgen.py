@@ -113,12 +113,21 @@ def build(state: dict) -> dict:
         teffs.append(int(round(value)))
     rparams["OBJECT_TEFF"] = teffs
     templates = {row["name"] for row in lblinfo.templates(data_dir, instrument)}
-    vetted = {row["name"] for row in lblinfo.vetted(instrument)}
+    vetted = {row["name"]: row for row in lblinfo.vetted(instrument)}
     for target, other in zip(targets, rparams["OBJECT_COMPARISON"]):
-        # a vetted template comes from LBL's depot when the run needs it
+        # a vetted template comes from LBL's depot when the run needs it:
+        #   one the depot does not have stops the run on its first step
         if str(other).upper().startswith("VETTED_"):
             if other not in vetted:
                 errors.append(say("err_vetted_unknown", other, instrument))
+                continue
+            where = lblinfo.vetted_where(data_dir, vetted[other])
+            if where == "missing":
+                errors.append(say("err_vetted_missing", other,
+                                  vetted[other]["file"],
+                                  os.path.join(data_dir, "models")))
+            elif where == "unknown":
+                warnings.append(say("warn_vetted_unknown", other))
             continue
         if other != target and other not in templates and not os.path.isdir(
                 os.path.join(data_dir, "science", other)):

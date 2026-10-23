@@ -307,6 +307,30 @@ def vetted(instrument: str) -> list:
         from lbl.core import vetted as lbl_vetted
     except ImportError:
         return []
-    keys = ("name", "object", "teff", "nfiles", "prot", "simbad")
+    keys = ("name", "object", "teff", "nfiles", "prot", "simbad", "file")
     return [{key: entry.get(key) for key in keys}
             for entry in lbl_vetted.entries(instrument)]
+
+
+def vetted_where(data_dir: str, entry: dict, timeout: float = 4.0) -> str:
+    """Where a run would get a vetted template from: 'local' (its depot
+    file in DATA_DIR/models, or the template already in templates/),
+    'repo' (LBL's model repository has it), 'missing' (the repository
+    answers it has not) or 'unknown' (the repository does not answer)."""
+    import urllib.error
+    import urllib.request
+    if os.path.exists(os.path.join(data_dir, "models", entry["file"])):
+        return "local"
+    if glob.glob(os.path.join(data_dir, "templates",
+                              "LBL_Template_%s_*.fits" % entry["name"])):
+        return "local"
+    try:
+        from lbl.core import parameters
+        url = "%s/%s" % (parameters.params["MODEL_REPO_URL"], entry["file"])
+        request = urllib.request.Request(url, method="HEAD")
+        with urllib.request.urlopen(request, timeout=timeout):
+            return "repo"
+    except urllib.error.HTTPError as exc:
+        return "missing" if exc.code == 404 else "unknown"
+    except Exception:                                     # noqa: BLE001
+        return "unknown"
