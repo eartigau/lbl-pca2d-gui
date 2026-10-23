@@ -145,6 +145,11 @@ document.addEventListener('mouseout', (event) => {
   if (event.target.closest('[data-tip]')) tip(event, null);
 });
 const esc = (text) => String(text ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// a help is plain text, a blank line between its paragraphs
+const helpHtml = (text) => esc(text).replace(/\n\n/g, '<br><br>');
+const info = (key) => el('span', { class: 'info', 'data-tip': helpHtml(t(key)), text: 'i' });
+// an (i) inside a <label> explains it and does not tick or focus it
+document.addEventListener('click', (event) => { if (event.target.closest('.info')) event.preventDefault(); });
 
 function confirmBox(text) {
   return new Promise((resolve) => {
@@ -166,6 +171,7 @@ async function loadStrings() {
   T = await api.get('/api/strings', { lang: S.lang });
   document.documentElement.lang = S.lang;
   document.querySelectorAll('[data-t]').forEach((node) => { node.textContent = t(node.dataset.t); });
+  document.querySelectorAll('[data-help]').forEach((node) => { node.textContent = 'i'; node.dataset.tip = helpHtml(t(`help_${node.dataset.help}`)); });
   $('lang').textContent = T.lang_switch;
   applyTheme();
   $('skip_pca2d').replaceChildren(
@@ -443,8 +449,10 @@ function legend(names, coloured) {
   if (names.length > coloured) items.push(el('span', {}, el('span', { class: 'swatch', style: `background:${css('--series-other')}` }), `${t('other_targets')} (${names.length - coloured})`));
   return el('div', { class: 'legend' }, items);
 }
+// the bounds are in RJD (BJD - 2400000), as LBL reads them; the headers give MJD, half a day less
 function inBounds(mjd) {
-  return (S.min_rjd === null || S.min_rjd === '' || mjd >= S.min_rjd) && (S.max_rjd === null || S.max_rjd === '' || mjd <= S.max_rjd);
+  const rjd = mjd + 0.5;
+  return (S.min_rjd === null || S.min_rjd === '' || rjd >= S.min_rjd) && (S.max_rjd === null || S.max_rjd === '' || rjd <= S.max_rjd);
 }
 
 function drawPlots() {
@@ -546,7 +554,7 @@ function drawTimeline(names) {
     if (mjd >= lo && mjd <= hi) years.push(mjd);
   }
   const marks = years.length >= 2 ? years : ticks(lo, hi, 4);
-  axes(root, inner, marks, [], xscale, () => 0, years.length >= 2 ? '' : 'MJD', (v) => (years.length >= 2 ? mjdDate(v).slice(0, 4) : `${Math.round(v)}`));
+  axes(root, inner, marks, [], xscale, () => 0, years.length >= 2 ? '' : 'RJD', (v) => (years.length >= 2 ? mjdDate(v).slice(0, 4) : `${Math.round(v + 0.5)}`));
   if (S.min_rjd !== null && S.min_rjd !== '' && S.min_rjd > lo) root.append(svg('rect', { x: inner.x0, width: xscale(S.min_rjd) - inner.x0, y: inner.y0, height: inner.y1 - inner.y0, fill: 'rgba(255,255,255,0.05)' }));
   if (S.max_rjd !== null && S.max_rjd !== '' && S.max_rjd < hi) root.append(svg('rect', { x: xscale(S.max_rjd), width: inner.x1 - xscale(S.max_rjd), y: inner.y0, height: inner.y1 - inner.y0, fill: 'rgba(255,255,255,0.05)' }));
   names.forEach((n, s) => {
@@ -555,7 +563,7 @@ function drawTimeline(names) {
     POINTS[n].mjd.forEach((m) => {
       if (m === null) return;
       const mark = svg('rect', { x: xscale(m) - 1, width: 2, y, height: rowHeight - 4, fill: colour, opacity: inBounds(m) ? 1 : 0.3 });
-      mark.dataset.tip = `${esc(n)}<br><span class="mono">${mjdDate(m)} · MJD ${fmt(m, 3)}</span>`;
+      mark.dataset.tip = `${esc(n)}<br><span class="mono">${mjdDate(m)} · RJD ${fmt(m + 0.5, 3)}</span>`;
       root.append(mark);
     });
   });
@@ -642,7 +650,8 @@ function drawOptions() {
     parts.push(el('div', { class: 'group-title', text: t(`group_${group}`) }));
     parts.push(el('div', { class: 'options-grid' }, groups[group].map((row) => {
       const set = Object.prototype.hasOwnProperty.call(S.pca2d, row.key);
-      const help = [row.help, row.lbl].filter(Boolean).map(esc).join('<br><br>');
+      // the window's own help; LBL's description (English) for an option it has none for yet
+      const help = row.help ? helpHtml(row.help) : (row.lbl ? `${esc(t('lbl_says'))}<br>${helpHtml(row.lbl)}` : '');
       return el('div', { class: `option${set ? ' changed' : ''}` },
         el('div', { class: 'name' }, row.label, help ? el('span', { class: 'info', 'data-tip': help, text: 'i' }) : null,
           el('div', { class: 'key', text: `${row.key} · ${t('default')} ${row.default === null || row.default === undefined ? t('unset') : row.default}` })),
@@ -662,7 +671,7 @@ function drawSwitches() {
     return el('label', { class: 'check' }, el('input', {
       type: 'checkbox', checked: Boolean(value),
       onchange: (event) => { S.lbl[row.key] = event.target.checked; wrapEdited = false; save(); },
-    }), t(`sw_${row.key}`));
+    }), t(`sw_${row.key}`), info(`help_sw_${row.key}`));
   }));
   $('resproj').checked = Boolean(S.resproj);
 }
@@ -681,7 +690,7 @@ function drawPerTarget() {
     return el('tr', {}, el('td', { text: name }), el('td', {}, select), el('td', {}, teff));
   });
   $('per_target').replaceChildren(
-    el('thead', {}, el('tr', {}, el('th', { text: t('col_target') }), el('th', { text: t('comparison') }), el('th', { text: t('teff') }))),
+    el('thead', {}, el('tr', {}, el('th', { text: t('col_target') }), el('th', {}, t('comparison'), info('help_comparison')), el('th', {}, t('teff'), info('help_teff')))),
     el('tbody', {}, rows.length ? rows : el('tr', {}, el('td', { colspan: 3, class: 'muted', text: t('no_points') }))));
 }
 

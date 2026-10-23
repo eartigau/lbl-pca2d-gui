@@ -347,6 +347,8 @@ table.data tr.group td {
   vertical-align: 1px;
 }
 .info:hover { color: var(--accent); border-color: var(--accent); }
+.label .info, h2 .info, .group-title .info, th .info { text-transform: none; letter-spacing: 0; font-weight: 700; }
+h2 .info { vertical-align: 3px; }
 .reset {
   background: none;
   border: none;
@@ -450,8 +452,9 @@ table.data tr.group td {
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 7px 10px;
-  font-size: 0.8rem;
-  max-width: 420px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 480px;
   color: var(--text);
   box-shadow: var(--shadow);
 }

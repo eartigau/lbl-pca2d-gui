@@ -32,7 +32,7 @@
     <section class="card span-3" id="setup">
       <div class="setup-grid">
         <label class="field wide">
-          <span class="label" data-t="data_dir"></span>
+          <span class="label"><span data-t="data_dir"></span><span class="info" data-help="data_dir"></span></span>
           <span class="row">
             <input id="data_dir" type="text" spellcheck="false" autocomplete="off">
             <button id="scan" type="button" class="button primary" data-t="scan"></button>
@@ -40,15 +40,15 @@
           <span class="hint small" id="scan_status" data-t="data_dir_hint"></span>
         </label>
         <label class="field">
-          <span class="label" data-t="instrument"></span>
+          <span class="label"><span data-t="instrument"></span><span class="info" data-help="instrument"></span></span>
           <select id="instrument"></select>
         </label>
         <label class="field">
-          <span class="label" data-t="source"></span>
+          <span class="label"><span data-t="source"></span><span class="info" data-help="source"></span></span>
           <select id="source"></select>
         </label>
         <label class="field wide">
-          <span class="label" data-t="python"></span>
+          <span class="label"><span data-t="python"></span><span class="info" data-help="python"></span></span>
           <input id="python" type="text" spellcheck="false" autocomplete="off" class="mono small">
         </label>
       </div>
@@ -99,6 +99,7 @@
             <div class="row gap small">
               <label class="field inline"><span data-t="min_rjd"></span><input id="min_rjd" type="number" step="1" class="mono"></label>
               <label class="field inline"><span data-t="max_rjd"></span><input id="max_rjd" type="number" step="1" class="mono"></label>
+              <span class="info" data-help="bounds"></span>
             </div>
             <p class="hint small" data-t="plot_time_hint"></p>
           </div>
@@ -117,7 +118,7 @@
         <div class="card">
           <h2 data-t="lbl_steps"></h2>
           <div id="switches" class="switches"></div>
-          <label class="check"><input type="checkbox" id="resproj"> <span data-t="resproj"></span></label>
+          <label class="check"><input type="checkbox" id="resproj"> <span data-t="resproj"></span><span class="info" data-help="resproj"></span></label>
           <div id="extra_box" class="extra" hidden>
             <div class="group-title" data-t="extra_title"></div>
             <pre id="extra" class="codeblock small"></pre>
@@ -131,9 +132,9 @@
     <section class="pane span-3" id="pane-pca2d" hidden>
       <div class="card">
         <div class="row spread">
-          <h2 data-t="pca2d_on"></h2>
+          <h2><span data-t="pca2d_on"></span><span class="info" data-help="pca2d_on"></span></h2>
           <span class="row gap">
-            <label class="field inline"><span data-t="skip_pca2d"></span><select id="skip_pca2d"></select></label>
+            <label class="field inline"><span data-t="skip_pca2d"></span><span class="info" data-help="skip_pca2d"></span><select id="skip_pca2d"></select></label>
             <label class="switch"><input type="checkbox" id="pca2d_on"><span class="hint small" data-t="pca2d_on_hint"></span></label>
           </span>
         </div>
@@ -150,9 +151,9 @@
       <div class="pane-grid">
         <div class="card span-2">
           <div class="row spread">
-            <h2 data-t="wrap"></h2>
+            <h2><span data-t="wrap"></span><span class="info" data-help="wrap"></span></h2>
             <span class="row gap">
-              <label class="field inline"><span data-t="run_name"></span><input id="run_name" type="text" class="mono" spellcheck="false"></label>
+              <label class="field inline"><span data-t="run_name"></span><span class="info" data-help="run_name"></span><input id="run_name" type="text" class="mono" spellcheck="false"></label>
               <button type="button" class="button" id="name_auto" data-t="run_name_auto"></button>
             </span>
           </div>
@@ -166,7 +167,7 @@
             <span class="hint small" id="save_status"></span>
           </div>
           <div class="load">
-            <div class="group-title" data-t="load_title"></div>
+            <div class="group-title"><span data-t="load_title"></span><span class="info" data-help="load"></span></div>
             <div class="row gap">
               <select id="wrap_list"></select>
               <input id="wrap_path" type="text" class="mono small" spellcheck="false">

@@ -18,6 +18,25 @@ def test_both_languages_have_every_word():
         assert helps is None or (len(helps) == 2 and all(helps)), key
 
 
+def test_every_option_and_step_is_explained_in_both_languages():
+    from pca2dgui import lblinfo
+    for row in lblinfo.pca2d_options("NIRPS_HE"):
+        for lang in ("en", "fr"):
+            text = i18n.option_text(row["key"], lang, row.get("description"))
+            assert len(text["help"]) > 80 and not text["lbl"], row["key"]
+    for row in lblinfo.lbl_switches():
+        assert "help_sw_%s" % row["key"] in i18n.EN, row["key"]
+    # an option the window does not know yet shows LBL's own words
+    text = i18n.option_text("new_key", "fr", "what LBL says")
+    assert text == dict(label="new_key", help="", lbl="what LBL says")
+
+
+def test_no_long_dashes():
+    words = " ".join(list(i18n.EN.values()) + list(i18n.FR.values()))
+    words += " ".join(h for _, helps in i18n.OPTIONS.values() for h in helps)
+    assert "\u2014" not in words and "\u2013" not in words
+
+
 def test_french_says_vous_never_tu():
     words = " ".join(i18n.FR.values()).lower().replace("'", " ").split()
     assert not {"tu", "toi", "ton", "ta", "tes"} & set(words)
