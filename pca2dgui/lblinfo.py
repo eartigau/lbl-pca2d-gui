@@ -296,3 +296,17 @@ def templates(data_dir: str, instrument: str) -> list:
             out.append(dict(name=name[len("LBL_Template_"):-len(suffix)],
                             teff=template_teff(path)))
     return out
+
+
+def vetted(instrument: str) -> list:
+    """LBL's vetted templates for this instrument (lbl.core.vetted): what a
+    wrap can name as VETTED_<object>, coolest first, each with its Teff,
+    its number of spectra and its rotation period. Empty for an instrument
+    without them, or an LBL that has none."""
+    try:
+        from lbl.core import vetted as lbl_vetted
+    except ImportError:
+        return []
+    keys = ("name", "object", "teff", "nfiles", "prot", "simbad")
+    return [{key: entry.get(key) for key in keys}
+            for entry in lbl_vetted.entries(instrument)]

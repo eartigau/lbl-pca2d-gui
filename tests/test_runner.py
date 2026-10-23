@@ -109,3 +109,45 @@ def test_a_closed_window_finds_its_runs_again(tmp_path):
     assert _wait(first) == "done"
     assert any("finished meanwhile" in e["text"] for e in first.events)
     assert _wait(second) == "done"
+
+
+def _line(text, level="I"):
+    return "\x1b[94;1m2026-10-23 12:33:37.953|%s| %s\x1b[0;0m" % (level, text)
+
+
+def test_the_steps_tick_off_as_the_log_goes(tmp_path):
+    from pca2dgui import wrapgen
+    rparams = dict(OBJECT_SCIENCE=["TOI904"], RUN_LBL_TELLUCLEAN=False,
+                   RUN_LBL_TEMPLATE=True, RUN_LBL_MASK=True,
+                   RUN_LBL_COMPUTE=True, RUN_LBL_COMPILE=True, REPORT=True,
+                   PCA2D=dict(n_star=1, name="ext"))
+    steps = wrapgen.steps(rparams)
+    kinds = [(s["kind"], s["obj"]) for s in steps]
+    assert kinds[:5] == [("template", "TOI904"), ("mask", "TOI904"),
+                         ("compute", "TOI904"), ("compile", "TOI904"),
+                         ("report", "TOI904")]
+    assert kinds[5:9] == [("pca2d_cube", "TOI904"), ("pca2d_fit", "TOI904"),
+                          ("pca2d_figures", "TOI904"),
+                          ("pca2d_correct", "TOI904")]
+    assert kinds[-1] == ("report", "TOI904_pca2d_ext")
+    job = runner.Job("x", "x", str(tmp_path), "wrap.py", "python",
+                     str(tmp_path), dict(steps=steps))
+    for text in ("\tLBL Template", '\tOBJECT_SCIENCE="TOI904"',
+                 "\tLBL Template", '\tOBJECT_SCIENCE="TOI904"',
+                 "\tLBL Mask", '\tOBJECT_SCIENCE="TOI904"'):
+        job.add(_line(text), False)
+    states = [s["state"] for s in job.steps]
+    assert states[:3] == ["done", "running", "pending"]
+    for text in ("\tLBL Compute", '\tOBJECT_SCIENCE="TOI904"',
+                 "\tLBL Compil", '\tOBJECT_SCIENCE="TOI904"',
+                 "Report written: /a/TOI904_GL514.pdf", "stage cube",
+                 "stage fit"):
+        job.add(_line(text, "G" if "stage" in text else "I"), False)
+    states = [s["state"] for s in job.steps]
+    assert states[:7] == ["done"] * 6 + ["running"]
+    assert job.stage == "PCA2D fit"
+    # it fails in the fit: that step is the failed one
+    job.state = "failed"
+    job.finish_steps()
+    assert job.steps[6]["state"] == "failed"
+    assert all(s["state"] == "pending" for s in job.steps[7:])

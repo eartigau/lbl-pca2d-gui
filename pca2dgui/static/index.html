@@ -89,6 +89,11 @@
             <p class="hint small" data-t="plot_berv_hint"></p>
           </div>
           <div class="card">
+            <h2><span data-t="plot_vtot"></span><span class="info" data-help="vtot"></span></h2>
+            <div id="plot_vtot" class="plot"></div>
+            <p class="hint small" data-t="plot_vtot_hint"></p>
+          </div>
+          <div class="card">
             <h2 data-t="plot_snr"></h2>
             <div id="plot_snr" class="plot"></div>
             <p class="hint small" data-t="plot_snr_hint"></p>
@@ -111,8 +116,15 @@
     <section class="pane span-3" id="pane-lbl" hidden>
       <div class="pane-grid">
         <div class="card span-2">
-          <h2 data-t="per_target"></h2>
+          <div class="row spread">
+            <h2 data-t="per_target"></h2>
+            <span class="row gap" id="vetted_bar" hidden>
+              <button type="button" class="button" id="best_all" data-t="best_match_all"></button>
+              <span class="info" data-help="vetted"></span>
+            </span>
+          </div>
           <div class="table-wrap"><table class="data" id="per_target"></table></div>
+          <p class="hint small warn-text" id="vetted_notes"></p>
           <p class="hint small" data-t="comparison_hint"></p>
         </div>
         <div class="card">
@@ -187,6 +199,13 @@
         <div class="card">
           <h2 data-t="queue_title"></h2>
           <div id="queue_list"></div>
+        </div>
+        <div class="card span-3">
+          <div class="row spread">
+            <h2><span data-t="steps_title"></span><span class="info" data-help="steps"></span></h2>
+            <span class="hint small" id="steps_note"></span>
+          </div>
+          <div id="steps" class="steps"></div>
         </div>
         <div class="card span-3">
           <div class="row spread">

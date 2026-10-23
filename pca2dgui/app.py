@@ -180,6 +180,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(lblinfo.bases(
                     data_dir, query.get("instrument", ""),
                     query.get("source", "")))
+            if route == "/api/vetted":
+                return self._json(lblinfo.vetted(query.get("instrument", "")))
             if route == "/api/templates":
                 data_dir = ctx.allow(query.get("data_dir", ""))
                 return self._json(lblinfo.templates(
@@ -322,7 +324,8 @@ class Handler(BaseHTTPRequestHandler):
                 python = body.get("python") or sys.executable
                 built.update(name=name, python=python,
                              wrap=wrapgen.render(built["rparams"], name,
-                                                 python))
+                                                 python),
+                             steps=wrapgen.steps(built["rparams"]))
                 return self._json(built)
             if route == "/api/queue":
                 return self._queue(body)
@@ -398,6 +401,7 @@ class Handler(BaseHTTPRequestHandler):
             dict(targets=built["rparams"].get("OBJECT_SCIENCE"),
                  instrument=built["rparams"].get("INSTRUMENT"),
                  pca2d=built["rparams"].get("PCA2D"),
+                 steps=wrapgen.steps(built["rparams"]),
                  edited=bool(body.get("wrap"))
                  and body.get("wrap") != wrapgen.render(
                      built["rparams"], name, python)),

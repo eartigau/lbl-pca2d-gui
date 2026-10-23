@@ -23,7 +23,7 @@ import numpy as np
 #: where the indexes are kept, one per data folder
 INDEX_HOME = os.path.expanduser("~/.lbl_pca2d_gui/scans")
 #: bumped when the shape of an index changes
-VERSION = 1
+VERSION = 2
 #: a folder made from another by LBL or PCA2D is not a target: the corrected
 #: (<object>_pca2d, <object>_pca2d_<name>) and the cleaned (<object>_tc)
 DERIVED = re.compile(r"(_pca2d(_.*)?|_tc(_.*)?)$")
@@ -44,6 +44,12 @@ SNR_KEYS = ("SNR", "HIERARCH ESO QC ORDER60 SNR", "HIERARCH ESO DRS SPE EXT SN60
 #: the effective temperature some pipelines write (APERO: OBJTEMP), which
 #:    is what a wrap hands LBL as OBJECT_TEFF when the window has it
 TEFF_KEYS = ("OBJTEMP", "PP_TEFF", "TEFF", "HIERARCH ESO OCS TARG TEFF")
+#: the star's systemic velocity: APERO's PP_RV [m/s], when PP_RVS names its
+#:    source, else ESO's target velocity [km/s]; 0 there means unknown.
+#:    SPIRou's OBJRV is not read: it can be anything (280 km/s for
+#:    KIC 12060710, whose lines LBL finds at 4 km/s)
+VSYS_SOURCE_KEY, VSYS_APERO_KEY = "PP_RVS", "PP_RV"
+VSYS_ESO_KEY = "HIERARCH ESO TEL TARG RADVEL"
 #: the night a spectrum belongs to: MJD shifted so that a night does not
 #: straddle midnight UTC anywhere it matters (Chile, Hawaii)
 NIGHT_SHIFT = -0.3
@@ -95,7 +101,7 @@ def read_file(path: str) -> dict:
     does not say."""
     from astropy.io import fits
     out = dict(instrument="?", object=None, snr=None, berv=None, mjd=None,
-               exptime=None, teff=None)
+               exptime=None, teff=None, vsys=None)
     with fits.open(path, memmap=True) as hdulist:
         headers = [hdu.header for hdu in hdulist]
     out["instrument"] = _instrument(headers)
@@ -120,12 +126,25 @@ def read_file(path: str) -> dict:
     if mjd is not None and mjd > 2400000.5:
         mjd -= 2400000.5
     out["mjd"] = mjd
+    out["vsys"] = _vsys(ordered)
     for key in ("DRSOBJN", "OBJECT", "OBJNAME"):
         value = next((h[key] for h in ordered if key in h), None)
         if value:
             out["object"] = str(value).strip()
             break
     return out
+
+
+def _vsys(headers):
+    """The star's systemic velocity [km/s] the headers give, or None."""
+    for head in headers:
+        source = str(head.get(VSYS_SOURCE_KEY, "") or "").strip()
+        if VSYS_APERO_KEY in head and source and source.lower() != "none":
+            value = _number(head[VSYS_APERO_KEY])
+            if value is not None:
+                return round(value / 1000.0, 4)
+    value = _first(headers, (VSYS_ESO_KEY,))
+    return value if value else None
 
 
 def _first(headers, keys):
@@ -311,9 +330,11 @@ def summary(records: dict) -> dict:
 
 
 def points(records: dict) -> dict:
-    """One target's spectra for the plots: BERV, SNR and MJD, aligned."""
+    """One target's spectra for the plots: BERV, SNR, MJD and the systemic
+    velocity [km/s, None where the headers do not say], aligned."""
     rows = [r for r in records.values()
             if "unreadable" not in r and r.get("berv") is not None]
     return dict(berv=[r["berv"] for r in rows],
                 snr=[r.get("snr") for r in rows],
-                mjd=[r.get("mjd") for r in rows])
+                mjd=[r.get("mjd") for r in rows],
+                vsys=[r.get("vsys") for r in rows])

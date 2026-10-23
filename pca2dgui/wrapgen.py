@@ -41,6 +41,11 @@ def _coerce(value, kind: str):
     return str(value)
 
 
+#: the instruments whose spectra come telluric-corrected (APERO): LBL's
+#:    telluric cleaning is always off for them
+NO_TELLUCLEAN = ("NIRPS", "SPIROU")
+
+
 def _family(name) -> str:
     """An instrument's family, the headers' way or LBL's: NIRPS for NIRPS,
     NIRPS_HE and NIRPS_HA, HARPSN for HARPS-N. Empty when unknown."""
@@ -108,7 +113,13 @@ def build(state: dict) -> dict:
         teffs.append(int(round(value)))
     rparams["OBJECT_TEFF"] = teffs
     templates = {row["name"] for row in lblinfo.templates(data_dir, instrument)}
+    vetted = {row["name"] for row in lblinfo.vetted(instrument)}
     for target, other in zip(targets, rparams["OBJECT_COMPARISON"]):
+        # a vetted template comes from LBL's depot when the run needs it
+        if str(other).upper().startswith("VETTED_"):
+            if other not in vetted:
+                errors.append(say("err_vetted_unknown", other, instrument))
+            continue
         if other != target and other not in templates and not os.path.isdir(
                 os.path.join(data_dir, "science", other)):
             errors.append(say("err_no_comparison", target, other))
@@ -120,6 +131,10 @@ def build(state: dict) -> dict:
         value = lbl.get(key, row["default"])
         if key == "RUN_LBL_TELLUCLEAN" and value is None:
             value = telluclean
+        # NIRPS's and SPIRou's spectra come telluric-corrected: never
+        #   LBL's own cleaning on them, whatever the state says
+        if key == "RUN_LBL_TELLUCLEAN" and _family(instrument) in NO_TELLUCLEAN:
+            value = False
         rparams[key] = bool(value)
     if state.get("resproj"):
         rparams["RESPROJ_TABLES"] = {
@@ -214,3 +229,60 @@ def render(rparams: dict, name: str = "", python: str = "") -> str:
         lines.append("    )")
     lines.append("    lbl_wrap.main(rparams)")
     return "\n".join(lines) + "\n"
+
+
+#: LBL's recipes, in the order _lbl_steps runs them, and their switch
+LBL_STEPS = (("template", "RUN_LBL_TEMPLATE"), ("mask", "RUN_LBL_MASK"),
+             ("compute", "RUN_LBL_COMPUTE"), ("compile", "RUN_LBL_COMPILE"))
+
+
+def steps(rparams: dict) -> list:
+    """The steps of a run, in the order lbl_wrap goes through them:
+    [dict(kind, obj)], kind one of telluclean, template, mask, compute,
+    compile, report, pca2d_cube, pca2d_fit, pca2d_figures, pca2d_correct.
+    The window ticks them off as the log names them (runner.Job)."""
+    out = []
+    targets = list(rparams.get("OBJECT_SCIENCE") or [])
+    pca2d = rparams.get("PCA2D")
+    on = pca2d not in (None, False)
+    pca2d = pca2d if isinstance(pca2d, dict) else {}
+    compare = on and pca2d.get("compare", True)
+    joint = on and pca2d.get("joint")
+    figures = pca2d.get("figures", rparams.get("REPORT", True))
+    name = pca2d.get("name")
+    tellu = bool(rparams.get("RUN_LBL_TELLUCLEAN"))
+    measured = set()
+
+    def lbl(obj):
+        for kind, switch in LBL_STEPS:
+            if rparams.get(switch, True):
+                out.append(dict(kind=kind, obj=obj))
+        if rparams.get("REPORT", True) and rparams.get("RUN_LBL_COMPILE", True):
+            out.append(dict(kind="report", obj=obj))
+
+    fitted = False
+    for target in targets:
+        obj = target
+        if tellu:
+            out.append(dict(kind="telluclean", obj=target))
+            obj = target + "_tc"
+        if not on:
+            lbl(obj)
+            continue
+        if compare and obj not in measured:
+            lbl(obj)
+            measured.add(obj)
+        if joint and not fitted and compare and not tellu:
+            for other in targets:
+                if other not in measured:
+                    lbl(other)
+                    measured.add(other)
+        if not (joint and fitted):
+            stages = ("cube", "fit") + (("figures",) if figures else ()) \
+                + ("correct",)
+            for stage in stages:
+                out.append(dict(kind="pca2d_" + stage,
+                                obj="+".join(targets) if joint else obj))
+            fitted = True
+        lbl(obj + "_pca2d" + ("_" + name if name else ""))
+    return out

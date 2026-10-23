@@ -186,6 +186,7 @@ input:focus, select:focus, textarea:focus {
 input.set, select.set { border-color: var(--accent); }
 input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
 .check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.check.locked { opacity: 0.5; cursor: not-allowed; }
 .switch { display: inline-flex; align-items: center; gap: 8px; }
 
 .button, .pill-button {
@@ -214,6 +215,7 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
 .button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .button:disabled, .button:disabled:hover { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
 .pill-button { padding: 6px 12px; }
+.button.small { font-size: 0.78rem; padding: 4px 11px; }
 
 /* ── tabs ───────────────────────────────────────────────────────────── */
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -573,3 +575,29 @@ h2 .info { vertical-align: 3px; }
   z-index: -2;
   background: radial-gradient(1400px 900px at 50% 40%, var(--veil-in) 0%, var(--veil-out) 100%);
 }
+
+/* ── the steps of a run ─────────────────────────────────────────────── */
+.steps { display: flex; flex-direction: column; gap: 8px; }
+.step-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.step-obj { min-width: 14em; color: var(--muted); font-size: 0.8rem; }
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  padding: 3px 11px 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--input-bg);
+}
+.step-icon { font-weight: 700; width: 1em; text-align: center; }
+.step.done { color: #12936a; border-color: rgba(18, 147, 106, 0.45); background: rgba(18, 147, 106, 0.08); }
+.step.running { color: var(--text); border-color: #eb6834; box-shadow: 0 0 0 3px rgba(235, 104, 52, 0.18); }
+.step.running .step-icon { color: #eb6834; display: inline-block; animation: step-spin 1.2s linear infinite; }
+.step.failed { color: #d03b3b; border-color: rgba(208, 59, 59, 0.55); background: rgba(208, 59, 59, 0.08); }
+.step.stopped { color: #b4700a; border-color: rgba(250, 178, 25, 0.55); }
+:root:not([data-theme="light"]) .step.done { color: var(--good); }
+:root:not([data-theme="light"]) .step.failed { color: var(--bad); }
+@keyframes step-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .step.running .step-icon { animation: none; } }

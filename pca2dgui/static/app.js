@@ -30,12 +30,14 @@ let SWITCHES = [];
 let TARGETS = [];
 let BASES = [];
 let TEMPLATES = [];
+let VETTED = [];
 let POINTS = {};
 let wrapEdited = false;
 let selectedJob = null;
 let stream = null;
 let logLast = null;
 let scanTimer = null;
+let rescanned = false;
 
 // ── plumbing ────────────────────────────────────────────────────────────
 const api = {
@@ -260,6 +262,13 @@ async function loadTargets() {
     $('scan_status').textContent = TARGETS.length ? t('scan_done', TARGETS.length, files) : t('data_dir_hint');
   }
   if (!scan.running && scanTimer) { clearInterval(scanTimer); scanTimer = null; }
+  // spectra on disk the index has not read (a new folder, or an index of an
+  //   older shape): read them, once per page
+  if (!scan.running && !rescanned && TARGETS.some((row) => (row.files || 0) < (row.on_disk || 0))) {
+    rescanned = true;
+    scan();
+    return;
+  }
   // an instrument from the targets when none was chosen yet
   if (!S.instrument_set) {
     const counts = {};
@@ -453,17 +462,21 @@ function axes(root, inner, xs, ys, xscale, yscale, xlabel, xfmt) {
   }
   root.append(axis);
 }
-function empty(holder) {
+function empty(holder, message) {
   const { root } = frame(360, 80, { l: 0, r: 0, t: 0, b: 0 });
   const text = svg('text', { x: 180, y: 44, 'text-anchor': 'middle', class: 'empty' });
-  text.textContent = t('no_points');
+  text.textContent = message || t('no_points');
   root.append(text);
   holder.replaceChildren(root);
 }
+// a target's colour is its place among the ticked ones, in every plot
 function legend(names, coloured) {
   if (names.length < 2) return null;
-  const items = names.slice(0, coloured).map((name, i) => el('span', {}, el('span', { class: 'swatch', style: `background:${css(SERIES[i])}` }), name));
-  if (names.length > coloured) items.push(el('span', {}, el('span', { class: 'swatch', style: `background:${css('--series-other')}` }), `${t('other_targets')} (${names.length - coloured})`));
+  const place = (n) => S.ticked.indexOf(n);
+  const shown = names.filter((n) => place(n) < coloured);
+  const rest = names.length - shown.length;
+  const items = shown.map((name) => el('span', {}, el('span', { class: 'swatch', style: `background:${css(SERIES[place(name)])}` }), name));
+  if (rest) items.push(el('span', {}, el('span', { class: 'swatch', style: `background:${css('--series-other')}` }), `${t('other_targets')} (${rest})`));
   return el('div', { class: 'legend' }, items);
 }
 // the bounds are in RJD (BJD - 2400000), as LBL reads them; the headers give MJD, half a day less
@@ -474,56 +487,76 @@ function inBounds(mjd) {
 
 function drawPlots() {
   const names = S.ticked.filter((name) => POINTS[name] && POINTS[name].berv.length);
-  if (!names.length) { empty($('plot_berv')); empty($('plot_snr')); empty($('plot_time')); return; }
+  if (!names.length) { empty($('plot_berv')); empty($('plot_vtot')); empty($('plot_snr')); empty($('plot_time')); return; }
   drawHistogram(names);
+  drawVtot(names);
   drawScatter(names);
   drawTimeline(names);
 }
 
 function drawHistogram(names) {
+  histogram($('plot_berv'), names, (n) => POINTS[n].berv.map((v, i) => [v, POINTS[n].mjd[i]]), 'BERV (km/s)', 'BERV');
+}
+
+// v_tot = v_sys - BERV: where the star's lines fall against the tellurics,
+//   for the targets whose headers give a systemic velocity (the others are
+//   left out, not drawn at 0)
+function drawVtot(names) {
+  const withVsys = names.filter((n) => (POINTS[n].vsys || []).some((v) => v !== null && v !== undefined));
+  if (!withVsys.length) { empty($('plot_vtot'), t('no_vsys')); return; }
+  histogram($('plot_vtot'), withVsys, (n) => POINTS[n].berv.map((b, i) => {
+    const vsys = POINTS[n].vsys[i];
+    return vsys === null || vsys === undefined ? null : [vsys - b, POINTS[n].mjd[i]];
+  }).filter(Boolean), 'v_tot = v_sys - BERV (km/s)', 'v_tot');
+}
+
+// a histogram stacked by target, per 3 km/s; each target keeps its colour
+//   (its place among the ticked ones), past the coloured slots one grey
+function histogram(holder, names, valuesOf, xlabel, what) {
   const width = 380;
   const height = 190;
   const { root, inner } = frame(width, height, { l: 30, r: 8, t: 6, b: 36 });
-  const all = names.flatMap((n) => POINTS[n].berv);
+  const values = Object.fromEntries(names.map((n) => [n, valuesOf(n)]));
+  const all = names.flatMap((n) => values[n].map((pair) => pair[0]));
   const bin = 3;
   const lo = Math.floor(Math.min(...all) / bin) * bin;
   const hi = Math.ceil(Math.max(...all) / bin) * bin + (Math.max(...all) % bin === 0 ? bin : 0);
   const bins = Math.max(1, Math.round((hi - lo) / bin));
-  const counts = names.map((n) => {
-    const c = new Array(bins).fill(0);
-    POINTS[n].berv.forEach((v, i) => { if (inBounds(POINTS[n].mjd[i])) c[Math.min(bins - 1, Math.floor((v - lo) / bin))] += 1; });
-    return c;
+  const slot = (n) => Math.min(S.ticked.indexOf(n), HIST_COLOURED);
+  const counts = {};
+  names.forEach((n) => {
+    const s = slot(n);
+    counts[s] = counts[s] || new Array(bins).fill(0);
+    values[n].forEach(([v, mjd]) => { if (inBounds(mjd)) counts[s][Math.min(bins - 1, Math.floor((v - lo) / bin))] += 1; });
   });
-  // past the coloured slots, the others are one grey series
-  let series = counts.slice(0, HIST_COLOURED);
-  if (names.length > HIST_COLOURED) {
-    const other = new Array(bins).fill(0);
-    counts.slice(HIST_COLOURED).forEach((c) => c.forEach((v, i) => { other[i] += v; }));
-    series = [...series, other];
-  }
+  const slots = Object.keys(counts).map(Number).sort((a, b) => a - b);
+  const colourOfSlot = (s) => (s < HIST_COLOURED ? css(SERIES[s]) : css('--series-other'));
   const totals = new Array(bins).fill(0);
-  series.forEach((c) => c.forEach((v, i) => { totals[i] += v; }));
+  slots.forEach((s) => counts[s].forEach((v, i) => { totals[i] += v; }));
   const top = Math.max(1, ...totals);
   const xscale = (v) => inner.x0 + ((v - lo) / (hi - lo)) * (inner.x1 - inner.x0);
   const yscale = (v) => inner.y1 - (v / top) * (inner.y1 - inner.y0);
-  axes(root, inner, ticks(lo, hi, 6), ticks(0, top, 4), xscale, yscale, 'BERV (km/s)');
+  axes(root, inner, ticks(lo, hi, 6), ticks(0, top, 4), xscale, yscale, xlabel);
   const gap = 1;
   for (let i = 0; i < bins; i += 1) {
     let base = 0;
     const x0 = xscale(lo + i * bin) + gap;
     const x1 = xscale(lo + (i + 1) * bin) - gap;
-    series.forEach((c, s) => {
-      if (!c[i]) return;
-      const colour = s < HIST_COLOURED ? css(SERIES[s]) : css('--series-other');
-      root.append(svg('rect', { x: x0, width: Math.max(1, x1 - x0), y: yscale(base + c[i]) + (base ? 0 : 0), height: Math.max(0, yscale(base) - yscale(base + c[i]) - (base ? 1 : 0)), fill: colour, rx: 1.5 }));
-      base += c[i];
+    slots.forEach((s) => {
+      const c = counts[s][i];
+      if (!c) return;
+      root.append(svg('rect', { x: x0, width: Math.max(1, x1 - x0), y: yscale(base + c), height: Math.max(0, yscale(base) - yscale(base + c) - (base ? 1 : 0)), fill: colourOfSlot(s), rx: 1.5 }));
+      base += c;
     });
-    const lines = names.map((n, s) => (counts[s][i] ? `${esc(n)}: ${counts[s][i]}` : null)).filter(Boolean);
+    const lines = names.map((n) => {
+      const count = values[n].filter(([v, mjd]) => inBounds(mjd) && Math.min(bins - 1, Math.floor((v - lo) / bin)) === i).length;
+      return count ? `${esc(n)}: ${count}` : null;
+    }).filter(Boolean);
     const hit = svg('rect', { class: 'hit', x: xscale(lo + i * bin), width: xscale(lo + bin) - xscale(lo), y: inner.y0, height: inner.y1 - inner.y0 });
-    hit.dataset.tip = `<span class="mono">BERV ${lo + i * bin} → ${lo + (i + 1) * bin} km/s</span><br>${totals[i]} spectra${lines.length > 1 ? '<br>' + lines.join('<br>') : ''}`;
+    hit.dataset.tip = `<span class="mono">${what} ${lo + i * bin} → ${lo + (i + 1) * bin} km/s</span><br>${t('n_spectra', totals[i])}${lines.length > 1 ? `<br>${lines.join('<br>')}` : ''}`;
     root.append(hit);
   }
-  $('plot_berv').replaceChildren(...[legend(names, HIST_COLOURED), root].filter(Boolean));
+  holder.replaceChildren(...[legend(names, HIST_COLOURED), root].filter(Boolean));
 }
 
 function drawScatter(names) {
@@ -592,6 +625,8 @@ async function loadInstrumentThings() {
   const data = await api.get('/api/options', { instrument: S.instrument, lang: S.lang });
   OPTIONS = data.options || [];
   SWITCHES = data.switches || [];
+  VETTED = await api.get('/api/vetted', { instrument: S.instrument });
+  if (!Array.isArray(VETTED)) VETTED = [];
   if (S.data_dir) {
     BASES = await api.get('/api/bases', { data_dir: S.data_dir, instrument: S.instrument, source: S.source });
     TEMPLATES = await api.get('/api/templates', { data_dir: S.data_dir, instrument: S.instrument });
@@ -658,10 +693,20 @@ function control(row) {
     });
   }
   return el('input', {
-    type: 'text', class: set ? 'set' : '', value: set ? (value ?? '') : '', placeholder: row.default ?? t('unset'),
+    type: 'text', class: set ? 'set' : '', value: set ? (value ?? '') : '', placeholder: row.default ?? defaultName(row.key) ?? t('unset'),
     spellcheck: 'false',
     onchange: (event) => setOption(row, event.target.value.trim() || row.default),
   });
+}
+
+// what an unset name will be, said in its grey: the corrected object's
+//   (<object>_pca2d) for the variant, the objects' for the basis saved
+function defaultName(key) {
+  const objects = S.ticked.length ? S.ticked : ['<object>'];
+  const more = objects.length > 1 ? ', …' : '';
+  if (key === 'name') return `${objects[0]}_pca2d${more}`;
+  if (key === 'output_name') return S.pca2d.joint ? objects.join('+') : `${objects[0]}${more}`;
+  return null;
 }
 
 function drawOptions() {
@@ -688,12 +733,16 @@ function drawOptions() {
   holder.style.opacity = S.pca2d_on ? 1 : 0.4;
 }
 
+// NIRPS's and SPIRou's spectra come telluric-corrected (APERO): LBL's own
+//   telluric cleaning is off for them, and cannot be ticked
+const NO_TELLUCLEAN = ['NIRPS', 'SPIROU'];
 function drawSwitches() {
   $('switches').replaceChildren(...SWITCHES.map((row) => {
     let value = Object.prototype.hasOwnProperty.call(S.lbl, row.key) ? S.lbl[row.key] : row.default;
     if (value === null) value = instrumentTelluclean();
-    return el('label', { class: 'check' }, el('input', {
-      type: 'checkbox', checked: Boolean(value),
+    const locked = row.key === 'RUN_LBL_TELLUCLEAN' && NO_TELLUCLEAN.includes(family(S.instrument));
+    return el('label', { class: `check${locked ? ' locked' : ''}`, title: locked ? t('tellu_off') : null }, el('input', {
+      type: 'checkbox', checked: locked ? false : Boolean(value), disabled: locked,
       onchange: (event) => { S.lbl[row.key] = event.target.checked; wrapEdited = false; save(); },
     }), t(`sw_${row.key}`), info(`help_sw_${row.key}`));
   }));
@@ -701,6 +750,7 @@ function drawSwitches() {
 }
 
 function drawPerTarget() {
+  $('vetted_bar').hidden = !VETTED.length;
   const rows = S.ticked.map((name) => {
     const target = TARGETS.find((row) => row.name === name) || {};
     // every template offered says its temperature: the header's for those
@@ -715,17 +765,43 @@ function drawPerTarget() {
     const own = S.teff[name] || target.teff || temps[name];
     const select = el('select', { onchange: (event) => { if (event.target.value) S.comparison[name] = event.target.value; else delete S.comparison[name]; wrapEdited = false; save(); } },
       el('option', { value: '', text: own ? `${t('comparison_self')} (${Math.round(own)} K)` : t('comparison_self') }),
-      ...choices.map((c) => el('option', { value: c, text: labelled(c) })));
+      ...choices.map((c) => el('option', { value: c, text: labelled(c) })),
+      // LBL's vetted templates of this instrument, with their temperature
+      VETTED.length ? el('optgroup', { label: t('vetted_group') },
+        VETTED.map((v) => el('option', { value: v.name, text: t('vetted_label', v.object, v.teff, v.nfiles) }))) : null);
     select.value = S.comparison[name] || '';
     const teff = el('input', {
       type: 'number', step: 10, value: S.teff[name] ?? '', placeholder: target.teff ? Math.round(target.teff) : '',
       onchange: (event) => { if (event.target.value === '') delete S.teff[name]; else S.teff[name] = Number(event.target.value); wrapEdited = false; save(); },
     });
-    return el('tr', {}, el('td', { text: name }), el('td', {}, select), el('td', {}, teff));
+    const best = VETTED.length ? el('button', { type: 'button', class: 'button small', text: t('best_match'), onclick: () => bestMatch([name]) }) : null;
+    return el('tr', {}, el('td', { text: name }), el('td', {}, el('span', { class: 'row gap' }, select, best)), el('td', {}, teff));
   });
   $('per_target').replaceChildren(
     el('thead', {}, el('tr', {}, el('th', { text: t('col_target') }), el('th', {}, t('comparison'), info('help_comparison')), el('th', {}, t('teff'), info('help_teff')))),
     el('tbody', {}, rows.length ? rows : el('tr', {}, el('td', { colspan: 3, class: 'muted', text: t('no_points') }))));
+}
+
+// the vetted template of the nearest Teff, for targets of 2900-4300 K
+//   (lbl.core.vetted.best_match); the others are said and left as they are
+const VETTED_RANGE = [2900, 4300];
+function bestMatch(names) {
+  const notes = [];
+  names.forEach((name) => {
+    const target = TARGETS.find((row) => row.name === name) || {};
+    const own = TEMPLATES.find((tp) => tp.name === name) || {};
+    const teff = Number(S.teff[name] || target.teff || own.teff);
+    if (!teff || teff < VETTED_RANGE[0] || teff > VETTED_RANGE[1] || !VETTED.length) {
+      notes.push(t('best_match_none', name, teff ? Math.round(teff) : '?'));
+      return;
+    }
+    const best = VETTED.reduce((a, b) => (Math.abs(b.teff - teff) < Math.abs(a.teff - teff) ? b : a));
+    S.comparison[name] = best.name;
+  });
+  $('vetted_notes').textContent = notes.join(' · ');
+  wrapEdited = false;
+  save();
+  drawPerTarget();
 }
 
 function drawExtra() {
@@ -783,6 +859,25 @@ function updateLaunch(running) {
     ? t('launch_running', [running.stage, running.counter].filter(Boolean).join(' ') || t('state_running'))
     : t('launch');
   button.title = running ? t('launch_more') : '';
+}
+
+// ── the steps of a run, ticked off as its log goes ──────────────────────
+let plannedSteps = [];
+const STEP_ICON = { pending: '○', running: '◐', done: '✓', failed: '✗', stopped: '■' };
+function drawSteps(steps, title) {
+  const holder = $('steps');
+  $('steps_note').textContent = title || t('steps_planned');
+  const groups = [];
+  (steps || []).forEach((step) => {
+    const last = groups[groups.length - 1];
+    if (last && last.obj === step.obj) last.steps.push(step);
+    else groups.push({ obj: step.obj, steps: [step] });
+  });
+  holder.replaceChildren(...groups.map((group) => el('div', { class: 'step-group' },
+    el('span', { class: 'step-obj mono', text: group.obj }),
+    ...group.steps.map((step) => el('span', { class: `step ${step.state || 'pending'}` },
+      el('span', { class: 'step-icon', text: STEP_ICON[step.state || 'pending'] }),
+      t(`step_${step.kind}`))))));
 }
 
 // ── the wrap, with Python's colours ─────────────────────────────────────
@@ -860,6 +955,8 @@ async function build() {
   if (S.name_auto) { S.name = data.name; $('run_name').value = data.name; }
   setWrap(data.wrap);
   wrapEdited = false;
+  plannedSteps = data.steps || [];
+  if (!selectedJob) drawSteps(plannedSteps);
   showMessages(data.errors, data.warnings);
   $('queue').disabled = Boolean(data.errors && data.errors.length);
   return data;
@@ -899,6 +996,8 @@ async function pollQueue() {
   }
   updateLaunch(jobs.find((j) => j.state === 'running'));
   const job = jobs.find((j) => j.id === selectedJob);
+  if (job && job.steps && job.steps.length) drawSteps(job.steps, t('steps_of', job.name));
+  else drawSteps(plannedSteps);
   if (job) {
     $('log_stage').textContent = [job.stage, job.counter].filter(Boolean).join(' · ');
     $('log_stage').className = `badge ${job.state}`;
@@ -1090,6 +1189,7 @@ async function init() {
   $('stop').onclick = stopJob;
   $('runs_refresh').onclick = loadRuns;
   $('measure').onclick = measure;
+  $('best_all').onclick = () => bestMatch(S.ticked);
   $('delete').onclick = deleteSelected;
 
   await loadInstrumentThings();

@@ -32,8 +32,12 @@ LEVELS = {"32": "info", "92": "info", "34": "value", "94": "value",
 #: what the status line follows: PCA2D's stages, LBL's recipes, and the
 #: counters of the files they go through
 STAGE = re.compile(r"\bstage (\w+)\s*$")
-RECIPE = re.compile(r"^\s*LBL (Telluclean|Tellu Clean|Template|Mask|Compute"
-                    r"|Compile|Reset|Resmap|Pca2d|PCA2D)\s*$", re.I)
+RECIPE = re.compile(r"^\s*LBL (Telluclean|Tellu ?Clean|Template|Mask|Compute"
+                    r"|Compile?|Reset|Resmap|Pca2d|PCA2D)\s*$", re.I)
+#: the object a recipe works on, the line after its banner's
+OBJECT = re.compile(r'^\s*OBJECT_SCIENCE="([^"]*)"')
+#: LBL's report, written at the end of an object's steps
+REPORT = re.compile(r"^Report written: ")
 COUNTER = re.compile(r"\bfile (\d+) of (\d+)\b")
 #: the most events a run keeps in memory (its log on disk keeps everything)
 MAX_EVENTS = 200000
@@ -122,6 +126,11 @@ class Job:
         self.transient = False
         self.stopping = False
         self.reports = []
+        # the run's steps (wrapgen.steps), ticked off as the log names them
+        self.steps = [dict(step, state="pending")
+                      for step in (meta or {}).get("steps") or []]
+        self.step_at = 0
+        self.recipe = None
 
     # -- what a page sees ----------------------------------------------------
     def summary(self) -> dict:
@@ -132,7 +141,8 @@ class Job:
                     counter=self.counter, status=self.status,
                     wrap=self.wrap, folder=self.folder,
                     events=self.first + len(self.events),
-                    reports=self.reports, meta=self.meta)
+                    reports=self.reports, meta=self.meta,
+                    steps=self.steps)
 
     def events_from(self, start: int, wait: float = 0.0):
         """The events from index `start` on, waiting up to `wait` seconds
@@ -167,9 +177,18 @@ class Job:
             found = STAGE.search(message)
             if found:
                 self.stage = "PCA2D " + found.group(1)
+            if found:
+                self._advance("pca2d_" + found.group(1))
             found = RECIPE.search(message)
             if found:
                 self.stage = "LBL " + found.group(1).lower()
+                self.recipe = _recipe_kind(found.group(1))
+            found = OBJECT.search(message)
+            if found and self.recipe:
+                self._advance(self.recipe, found.group(1))
+                self.recipe = None
+            if REPORT.search(message.strip()):
+                self._advance("report", done=True)
             found = COUNTER.search(message)
             if found:
                 self.counter = "%s / %s" % found.groups()
@@ -178,6 +197,30 @@ class Job:
             self.cond.notify_all()
         if log is not None and not transient:
             log.write(plain + "\n")
+
+    def _advance(self, kind: str, obj=None, done: bool = False) -> None:
+        """The log has reached a step: the first one of this kind (and
+        object) from the current on; those before it are done."""
+        for index in range(self.step_at, len(self.steps)):
+            step = self.steps[index]
+            if step["kind"] == kind and (obj is None or step["obj"] == obj):
+                for before in self.steps[:index]:
+                    if before["state"] in ("pending", "running"):
+                        before["state"] = "done"
+                step["state"] = "done" if done else "running"
+                self.step_at = index + 1 if done else index
+                return
+
+    def finish_steps(self) -> None:
+        """At the end: every step done when the run succeeded; otherwise the
+        one it was in failed (or was stopped), the others stay as they
+        are."""
+        for step in self.steps:
+            if self.state == "done":
+                step["state"] = "done"
+            elif step["state"] == "running":
+                step["state"] = "stopped" if self.state == "stopped" \
+                    else "failed"
 
     def note(self, text: str, level: str = "info") -> None:
         """A line of the window's own (start, end, stop)."""
@@ -253,9 +296,12 @@ class Runner:
             found.append(record)
         found.sort(key=lambda r: r.get("created") or 0)
         for record in found:
+            meta = record.get("meta") or {}
+            if not meta.get("steps"):
+                meta = dict(meta, steps=_steps_of(record.get("wrap")))
             job = Job(record["id"], record.get("name", ""), record["folder"],
                       record["wrap"], record.get("python", ""), data_dir,
-                      record.get("meta") or {})
+                      meta)
             job.created = record.get("created") or time.time()
             job.started = record.get("started")
             job.pid = record.get("pid")
@@ -436,8 +482,29 @@ class Runner:
             job.state = "failed"
             job.note("ended with exit code %d after %s" % (code, took),
                      "error")
+        job.finish_steps()
         job.record()
         self.wake.set()
+
+
+def _steps_of(wrap) -> list:
+    """The steps of a run started before its steps were kept (run.json
+    without them): planned again from its wrap, read and never run."""
+    try:
+        from . import wrapgen, wrapload
+        rparams = wrapload.read(wrap)["rparams"]
+        return wrapgen.steps(rparams)
+    except Exception:                                     # noqa: BLE001
+        return []
+
+
+def _recipe_kind(banner: str) -> str:
+    """A recipe banner's step kind: telluclean, template, mask, compute,
+    compile (others as they are, lowercased)."""
+    word = banner.lower().replace(" ", "")
+    if word.startswith("compil"):
+        return "compile"
+    return word
 
 
 def _alive(pid) -> bool:

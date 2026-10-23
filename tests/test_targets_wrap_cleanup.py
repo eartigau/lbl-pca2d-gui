@@ -45,6 +45,31 @@ def test_headers_and_the_derived_folders(data_dir):
     assert record["object"] == "STAR"
 
 
+def test_the_systemic_velocity_only_when_the_headers_know_it(tmp_path):
+    path = tmp_path / "a.fits"
+    _apero(path, berv=3.0, mjd=60000.4)
+    # no velocity at all
+    assert targets.read_file(str(path))["vsys"] is None
+    with fits.open(path, mode="update") as hdul:
+        hdul[1].header["PP_RV"] = 1940.0
+        hdul[1].header["PP_RVS"] = "None"
+        hdul[0].header["HIERARCH ESO TEL TARG RADVEL"] = 1.95
+    # APERO's without a source is not read; ESO's is
+    assert targets.read_file(str(path))["vsys"] == 1.95
+    with fits.open(path, mode="update") as hdul:
+        hdul[1].header["PP_RVS"] = "2018yCat.1345....0G"
+    assert targets.read_file(str(path))["vsys"] == 1.94
+    with fits.open(path, mode="update") as hdul:
+        del hdul[1].header["PP_RV"]
+        hdul[0].header["HIERARCH ESO TEL TARG RADVEL"] = 0.0
+    assert targets.read_file(str(path))["vsys"] is None
+
+
+def test_no_telluric_cleaning_on_nirps_and_spirou(data_dir):
+    built = wrapgen.build(_state(data_dir, lbl={"RUN_LBL_TELLUCLEAN": True}))
+    assert built["rparams"]["RUN_LBL_TELLUCLEAN"] is False
+
+
 def test_the_scanner_reads_once(data_dir, monkeypatch, tmp_path):
     monkeypatch.setattr(targets, "INDEX_HOME", str(tmp_path / "index"))
     scanner = targets.Scanner()
