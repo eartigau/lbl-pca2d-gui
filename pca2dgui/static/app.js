@@ -1,5 +1,5 @@
 /*
- * pca2d-gui: the page. It holds the window's state (saved on the server,
+ * The LBL window: the page. It holds the window's state (saved on the server,
  * ~/.lbl_pca2d_gui.json), draws what the server reads from LBL and from the
  * data folder, and hands the server what to build and run. No framework:
  * one file, plain DOM and SVG.
@@ -15,7 +15,7 @@ const HIST_COLOURED = 8;      // its adjacent-pair cap
 const LOG_LINES = 5000;       // lines kept on the page (the log file keeps all)
 
 const DEFAULTS = {
-  lang: 'en', tab: 'targets', data_dir: '', instrument: '', source: '',
+  lang: 'en', theme: 'light', tab: 'targets', data_dir: '', instrument: '', source: '',
   python: '', ticked: [], hidden_instruments: [], sort: { key: 'name', dir: 1 },
   comparison: {}, teff: {}, lbl: {}, pca2d_on: true, pca2d: {},
   extra: {}, pca2d_extra: {},
@@ -167,11 +167,33 @@ async function loadStrings() {
   document.documentElement.lang = S.lang;
   document.querySelectorAll('[data-t]').forEach((node) => { node.textContent = t(node.dataset.t); });
   $('lang').textContent = T.lang_switch;
+  applyTheme();
   $('skip_pca2d').replaceChildren(
     el('option', { value: '', text: t('skip_auto') }),
     el('option', { value: 'true', text: t('skip_keep') }),
     el('option', { value: 'false', text: t('skip_redo') }));
   $('skip_pca2d').value = S.skip_pca2d === null ? '' : String(S.skip_pca2d);
+}
+
+// ── theme ───────────────────────────────────────────────────────────────
+const SUN = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+function applyTheme() {
+  document.documentElement.dataset.theme = S.theme;
+  // the button offers the other theme
+  const light = S.theme === 'light';
+  $('theme').innerHTML = `${light ? MOON : SUN} <span>${t(light ? 'theme_dark' : 'theme_light')}</span>`;
+}
+
+async function switchTheme() {
+  S.theme = S.theme === 'light' ? 'dark' : 'light';
+  save();
+  applyTheme();
+  // the plots and swatches read their colours from the theme when drawn
+  drawTargets();
+  drawPlots();
+  $('backdrop').classList.remove('ready');
+  setBackdrop();
 }
 
 // ── tabs ────────────────────────────────────────────────────────────────
@@ -317,11 +339,36 @@ function drawTargets() {
   });
   $('targets_table').replaceChildren(el('thead', {}, head), el('tbody', {}, body));
   $('ticked').textContent = t('ticked', S.ticked.length, TARGETS.length);
+  drawTiles();
   const notes = [];
   const mixed = new Set(TARGETS.filter((row) => S.ticked.includes(row.name)).map((row) => row.instrument));
   if (mixed.size > 1) notes.push(t('mixed_instruments'));
   if (S.ticked.length > 1) notes.push(t('joint_note'));
   $('target_notes').textContent = notes.join(' · ');
+}
+
+function drawTiles() {
+  const ticked = TARGETS.filter((row) => S.ticked.includes(row.name));
+  const sum = (rows, key) => rows.reduce((total, row) => total + (row[key] || 0), 0);
+  const count = (x) => Number(x).toLocaleString(S.lang === 'fr' ? 'fr-CA' : 'en-CA');
+  const span = (rows) => {
+    const firsts = rows.map((row) => row.first).filter((x) => x !== null && x !== undefined);
+    const lasts = rows.map((row) => row.last).filter((x) => x !== null && x !== undefined);
+    return firsts.length ? `${mjdDate(Math.min(...firsts))} → ${mjdDate(Math.max(...lasts))}` : '';
+  };
+  const bervs = ticked.filter((row) => row.berv_min !== null && row.berv_min !== undefined);
+  const lo = bervs.length ? Math.min(...bervs.map((row) => row.berv_min)) : null;
+  const hi = bervs.length ? Math.max(...bervs.map((row) => row.berv_max)) : null;
+  const instruments = [...new Set(TARGETS.map((row) => row.instrument).filter(Boolean))].sort();
+  const tile = (label, value, sub) => el('div', { class: 'tile' },
+    el('div', { class: 'label', text: label }),
+    el('div', { class: 'value', text: value }),
+    el('div', { class: 'sub', text: sub, title: sub }));
+  $('tiles').replaceChildren(
+    tile(t('tile_targets'), count(TARGETS.length), instruments.join(' · ')),
+    tile(t('tile_spectra'), count(sum(TARGETS, 'files')), span(TARGETS)),
+    tile(t('tile_ticked'), count(ticked.length), ticked.length ? t('tile_ticked_sub', count(sum(ticked, 'files'))) : t('tile_none')),
+    tile(t('tile_berv'), lo === null ? '-' : `${fmt(hi - lo)} km/s`, lo === null ? t('tile_none') : `${fmt(lo)} → ${fmt(hi)} km/s`));
 }
 
 function toggle(name) {
@@ -874,16 +921,19 @@ async function deleteSelected() {
 // ── background ──────────────────────────────────────────────────────────
 let backdropFor = null;
 async function setBackdrop() {
-  if (!S.data_dir || backdropFor === S.data_dir) return;
-  backdropFor = S.data_dir;
+  const wanted = `${S.data_dir}|${S.theme}`;
+  if (!S.data_dir || backdropFor === wanted) return;
+  backdropFor = wanted;
   const folder = S.data_dir;
-  for (let i = 0; i < 60 && folder === S.data_dir; i += 1) {
-    const status = await api.get('/api/backdrop_status', { data_dir: folder });
+  const theme = S.theme;
+  for (let i = 0; i < 60 && `${S.data_dir}|${S.theme}` === wanted; i += 1) {
+    const status = await api.get('/api/backdrop_status', { data_dir: folder, theme });
     if (status.none) return;
     if (status.ready) {
-      const url = `/api/backdrop?data_dir=${encodeURIComponent(folder)}&k=${status.key}`;
+      const url = `/api/backdrop?data_dir=${encodeURIComponent(folder)}&theme=${theme}&k=${status.key}`;
       const image = new Image();
       image.onload = () => {
+        if (`${S.data_dir}|${S.theme}` !== wanted) return;
         $('backdrop').style.backgroundImage = `url("${url}")`;
         $('backdrop').classList.add('ready');
       };
@@ -898,6 +948,7 @@ async function setBackdrop() {
 async function init() {
   const state = await api.get('/api/state');
   Object.assign(S, JSON.parse(JSON.stringify(DEFAULTS)), state.state || {});
+  document.documentElement.dataset.theme = S.theme;
   S.python = S.python || state.python;
   $('version').textContent = state.version;
   $('lbl_home').textContent = state.lbl;
@@ -910,6 +961,7 @@ async function init() {
   $('max_rjd').value = S.max_rjd ?? '';
   $('run_name').value = S.name || '';
 
+  $('theme').onclick = switchTheme;
   $('lang').onclick = async () => { S.lang = S.lang === 'fr' ? 'en' : 'fr'; save(); await loadStrings(); await loadInstrumentThings(); drawTargets(); drawPlots(); pollQueue(); if (S.tab === 'runs') loadRuns(); };
   document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
   $('scan').onclick = scan;

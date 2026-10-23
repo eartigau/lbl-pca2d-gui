@@ -235,12 +235,14 @@ class Handler(BaseHTTPRequestHandler):
                     reports=history.reports(data_dir)))
             if route == "/api/backdrop_status":
                 data_dir = ctx.allow(query.get("data_dir", ""))
-                path, ready = backdrop.ensure(data_dir)
+                path, ready = backdrop.ensure(data_dir,
+                                              query.get("theme", ""))
                 return self._json(dict(ready=ready, none=path is None,
                                        key=os.path.basename(path or "")))
             if route == "/api/backdrop":
                 data_dir = ctx.allow(query.get("data_dir", ""))
-                path, ready = backdrop.path_of(data_dir)
+                path, ready = backdrop.path_of(data_dir,
+                                               query.get("theme", ""))
                 if not ready:
                     return self.send_error(HTTPStatus.NOT_FOUND)
                 return self._file(path, "image/png")

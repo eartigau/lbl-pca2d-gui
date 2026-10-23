@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,9 +19,10 @@
   <div class="site-banner">
     <div class="site-banner-inner">
       <div class="site-banner-text">
-        <h2 data-t="title">LBL</h2>
+        <h2><span class="mark">LBL</span><span data-t="banner_name"></span></h2>
         <p data-t="tagline"></p>
       </div>
+      <button id="theme" class="home-link pill-button" type="button"></button>
       <button id="lang" class="home-link pill-button" type="button">FR</button>
       <a href="https://eartigau.github.io/" class="home-link" target="_blank">&larr; <span data-t="home">Home</span></a>
     </div>
@@ -54,16 +55,17 @@
     </section>
 
     <nav class="span-3 tabs" id="tabs">
-      <button type="button" data-tab="targets" data-t="tab_targets"></button>
-      <button type="button" data-tab="lbl" data-t="tab_lbl"></button>
-      <button type="button" data-tab="pca2d" data-t="tab_pca2d"></button>
-      <button type="button" data-tab="run" data-t="tab_run"></button>
-      <button type="button" data-tab="runs" data-t="tab_runs"></button>
-      <button type="button" data-tab="cleanup" data-t="tab_cleanup"></button>
+      <button type="button" data-tab="targets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg><span data-t="tab_targets"></span></button>
+      <button type="button" data-tab="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h3l2.5-7 3.5 14 3-10 2 5h6"/></svg><span data-t="tab_lbl"></span></button>
+      <button type="button" data-tab="pca2d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg><span data-t="tab_pca2d"></span></button>
+      <button type="button" data-tab="run"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z"/></svg><span data-t="tab_run"></span></button>
+      <button type="button" data-tab="runs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg><span data-t="tab_runs"></span></button>
+      <button type="button" data-tab="cleanup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span data-t="tab_cleanup"></span></button>
     </nav>
 
     <!-- TARGETS -->
     <section class="pane span-3" id="pane-targets">
+      <div class="tiles" id="tiles"></div>
       <div class="pane-grid">
         <div class="card span-2">
           <div class="row spread">

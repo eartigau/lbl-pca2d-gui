@@ -44,7 +44,12 @@ it, so that a wrap loaded and saved again loses nothing.
 
 The background is drawn from the data folder itself: its velocity curves,
 periodograms, indicators, a template and one exposure's per-line
-velocities, blurred behind the cards (cached in `~/.lbl_pca2d_gui/`).
+velocities, blurred behind the cards (cached in `~/.lbl_pca2d_gui/`, the
+last few only).
+
+The window is light by default, with a dark theme a click away in the
+banner; both use the shared fonts and banner of eartigau's tools, and each
+has its own validated colour palette for the plots.
 
 Each run leaves `DATA_DIR/gui/runs/<run>/`: its `wrap.py`, its log
 (`run.log`), and `run.json` (what ran, when, how it ended, the reports it

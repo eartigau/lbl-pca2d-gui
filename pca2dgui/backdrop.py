@@ -5,9 +5,9 @@ The tiles are what LBL leaves in a data folder: velocity curves (lblrdb), the
 velocities against the BERV, their periodograms, the line-width and
 temperature indicators, a stretch of a template (templates), and the
 per-line velocities of one exposure (lblrv). Drawn without labels, in the
-window's series colours on its background colour, then kept as a PNG keyed
-by the files it was drawn from, so that it is drawn once per state of the
-folder.
+series colours of the window's theme (light or dark) on its background, then
+kept as a PNG keyed by the files it was drawn from and the theme, so that it
+is drawn once per state of the folder.
 """
 from __future__ import annotations
 
@@ -25,10 +25,21 @@ HOME = os.path.expanduser("~/.lbl_pca2d_gui/backdrops")
 #:    pixel came out as a uniform haze
 COLUMNS, ROWS = 4, 3
 WIDTH, HEIGHT = 2200, 1240
-#: the window's colours (app.css)
-BACKGROUND = "#08111f"
-SERIES = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300",
-          "#9085e9", "#e66767")
+#: how many drawn mosaics are kept (each is a few hundred kB; a folder that
+#:    changes leaves the older ones behind)
+KEEP = 8
+#: the window's colours for each theme (app.css): page, tiles, spines, ticks,
+#:    grid, and the series (validated categorical palettes for each surface)
+THEMES = dict(
+    dark=dict(page="#08111f", tile="#0d1628", spine="#2a3d5c",
+              tick="#3c4d6b", grid="#1b2c47",
+              series=("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181",
+                      "#008300", "#9085e9", "#e66767")),
+    light=dict(page="#e9eef6", tile="#ffffff", spine="#c9d4e4",
+               tick="#b9c5d6", grid="#e6ecf4",
+               series=("#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4",
+                       "#008300", "#6250d6", "#e34948")),
+)
 
 _lock = threading.Lock()
 _running = set()
@@ -64,8 +75,12 @@ def sources(data_dir: str) -> dict:
     return dict(rdb=rdbs, templates=tpls, lblrv=lblrv)
 
 
-def key_of(found: dict) -> str:
-    parts = []
+def theme_of(theme) -> str:
+    return theme if theme in THEMES else "light"
+
+
+def key_of(found: dict, theme: str = "light") -> str:
+    parts = [theme_of(theme)]
     for paths in found.values():
         for path in paths:
             try:
@@ -75,20 +90,21 @@ def key_of(found: dict) -> str:
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:16]
 
 
-def path_of(data_dir: str):
-    """The mosaic of this folder as it stands, drawn or not: (path, ready),
-    or (None, False) when the folder has nothing of LBL's to draw."""
+def path_of(data_dir: str, theme: str = "light"):
+    """The mosaic of this folder as it stands, in this theme, drawn or not:
+    (path, ready), or (None, False) when the folder has nothing of LBL's to
+    draw."""
     found = sources(data_dir)
     if not found["rdb"] and not found["templates"]:
         return None, False
-    path = os.path.join(HOME, "%s.png" % key_of(found))
+    path = os.path.join(HOME, "%s.png" % key_of(found, theme))
     return path, os.path.exists(path)
 
 
-def ensure(data_dir: str):
+def ensure(data_dir: str, theme: str = "light"):
     """Start drawing this folder's mosaic if it is not drawn yet; returns
     (path, ready)."""
-    path, ready = path_of(data_dir)
+    path, ready = path_of(data_dir, theme)
     if path is None or ready:
         return path, ready
     with _lock:
@@ -98,7 +114,7 @@ def ensure(data_dir: str):
 
     def work():
         try:
-            draw(sources(data_dir), path)
+            draw(sources(data_dir), path, theme)
         finally:
             with _lock:
                 _running.discard(path)
@@ -198,34 +214,43 @@ def _draw_tile(ax, kind, data, colour):
                    linewidths=0)
 
 
-def draw(found: dict, path: str) -> None:
+def draw(found: dict, path: str, theme: str = "light") -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    colours = THEMES[theme_of(theme)]
     tiles = _tiles(found)
     if not tiles:
         return
     fig = plt.figure(figsize=(WIDTH / 100, HEIGHT / 100), dpi=100,
-                     facecolor=BACKGROUND)
+                     facecolor=colours["page"])
     grid = fig.add_gridspec(ROWS, COLUMNS, left=0.01, right=0.99, bottom=0.02,
                             top=0.98, wspace=0.12, hspace=0.16)
     for index in range(ROWS * COLUMNS):
         kind, data = tiles[index % len(tiles)]
         ax = fig.add_subplot(grid[index // COLUMNS, index % COLUMNS])
-        ax.set_facecolor("#0d1628")
+        ax.set_facecolor(colours["tile"])
         for spine in ax.spines.values():
-            spine.set_color("#2a3d5c")
+            spine.set_color(colours["spine"])
             spine.set_linewidth(2)
         # no numbers: blurred, they would only be noise
-        ax.tick_params(colors="#3c4d6b", length=2, labelbottom=False,
+        ax.tick_params(colors=colours["tick"], length=2, labelbottom=False,
                        labelleft=False)
-        ax.grid(color="#1b2c47", lw=1.6)
+        ax.grid(color=colours["grid"], lw=1.6)
+        series = colours["series"]
         try:
-            _draw_tile(ax, kind, data, SERIES[index % len(SERIES)])
+            _draw_tile(ax, kind, data, series[index % len(series)])
         except Exception:                                 # noqa: BLE001
             ax.set_visible(False)
     os.makedirs(HOME, exist_ok=True)
     tmp = path + ".tmp.png"
-    fig.savefig(tmp, facecolor=BACKGROUND)
+    fig.savefig(tmp, facecolor=colours["page"])
     plt.close(fig)
     os.replace(tmp, path)
+    drawn = sorted(glob.glob(os.path.join(HOME, "*.png")),
+                   key=os.path.getmtime, reverse=True)
+    for old in drawn[KEEP:]:
+        try:
+            os.remove(old)
+        except OSError:
+            pass
