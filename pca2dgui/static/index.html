@@ -148,21 +148,28 @@
 
     <!-- RUN -->
     <section class="pane span-3" id="pane-run" hidden>
+      <div class="card launch-bar">
+        <label class="field inline"><span data-t="run_name"></span><span class="info" data-help="run_name"></span><input id="run_name" type="text" class="mono" spellcheck="false"></label>
+        <button type="button" class="button" id="name_auto" data-t="run_name_auto"></button>
+        <span class="grow"></span>
+        <button type="button" class="launch" id="queue">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor"/></svg>
+          <span id="launch_label"></span>
+        </button>
+      </div>
       <div class="pane-grid">
         <div class="card span-2">
           <div class="row spread">
             <h2><span data-t="wrap"></span><span class="info" data-help="wrap"></span></h2>
-            <span class="row gap">
-              <label class="field inline"><span data-t="run_name"></span><span class="info" data-help="run_name"></span><input id="run_name" type="text" class="mono" spellcheck="false"></label>
-              <button type="button" class="button" id="name_auto" data-t="run_name_auto"></button>
-            </span>
           </div>
           <div id="messages"></div>
-          <textarea id="wrap_text" class="codeblock wrap-text" spellcheck="false"></textarea>
+          <div class="code-edit">
+            <pre class="code-hl" aria-hidden="true"><code id="wrap_hl"></code></pre>
+            <textarea id="wrap_text" class="code-input" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          </div>
           <p class="hint small" data-t="wrap_hint"></p>
           <div class="row gap wrap">
             <button type="button" class="button" id="check" data-t="check"></button>
-            <button type="button" class="button primary" id="queue" data-t="queue"></button>
             <button type="button" class="button" id="save_wrap" data-t="save_wrap"></button>
             <span class="hint small" id="save_status"></span>
           </div>

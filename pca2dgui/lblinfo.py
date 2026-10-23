@@ -261,15 +261,38 @@ def bases(data_dir: str, instrument: str = "", source: str = "") -> list:
     return out
 
 
+#: the header keys a template's effective temperature is read from, in order
+TEFF_KEYS = ("PP_TEFF", "OBJTEMP", "TEFF")
+
+
+def template_teff(path: str):
+    """A template's effective temperature [K] from its header, or None."""
+    from astropy.io import fits
+    try:
+        header = fits.getheader(path)
+    except Exception:                                     # noqa: BLE001
+        return None
+    for key in TEFF_KEYS:
+        try:
+            value = float(header[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if value > 0:
+            return value
+    return None
+
+
 def templates(data_dir: str, instrument: str) -> list:
     """The objects whose LBL template is in DATA_DIR/templates for this
-    instrument: what OBJECT_COMPARISON can name (another star's template is
-    then the star's spectrum in PCA2D)."""
+    instrument, with the temperature its header gives: what
+    OBJECT_COMPARISON can name (another star's template is then the star's
+    spectrum in PCA2D). [dict(name, teff)]"""
     folder = os.path.join(data_dir or "", "templates")
     suffix = "_%s.fits" % str(instrument).lower()
     out = []
     for path in sorted(glob.glob(os.path.join(folder, "LBL_Template_*"))):
         name = os.path.basename(path)
         if name.lower().endswith(suffix):
-            out.append(name[len("LBL_Template_"):-len(suffix)])
+            out.append(dict(name=name[len("LBL_Template_"):-len(suffix)],
+                            teff=template_teff(path)))
     return out

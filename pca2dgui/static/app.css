@@ -367,16 +367,84 @@ h2 .info { vertical-align: 3px; }
   background: var(--code-bg);
   color: var(--code-text);
 }
-.wrap-text {
-  width: 100%;
-  min-height: 340px;
+/* the wrap: a coloured copy (pre) under a transparent textarea, same box,
+   same font, scrolled together (app.js highlightWrap) */
+.code-edit {
+  position: relative;
+  height: 460px;
+  min-height: 200px;
   resize: vertical;
-  white-space: pre;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(130, 180, 240, 0.25);
+  background: var(--code-bg);
+}
+.code-hl, .code-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 12px 14px;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 0.82rem;
   line-height: 1.5;
-  border-radius: 12px;
-  padding: 12px 14px;
+  white-space: pre;
+  tab-size: 4;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
 }
+.code-hl { color: var(--code-text); pointer-events: none; overflow: hidden; }
+.code-input {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: #ffffff;
+}
+.code-input:focus { box-shadow: none; }
+.code-input::selection { background: rgba(98, 194, 255, 0.35); color: transparent; }
+.py-kw { color: #c792ea; }
+.py-st { color: #c3e88d; }
+.py-cm { color: #7f8ca3; font-style: italic; }
+.py-nu { color: #f78c6c; }
+.py-co { color: #ff9cac; }
+.py-fn { color: #82aaff; }
+
+/* the launch bar: the run's name and THE button */
+.launch-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.launch-bar .grow { flex: 1 1 auto; }
+.launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 38px 14px 30px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #12936a 0%, #1baf7a 100%);
+  box-shadow: 0 6px 20px rgba(18, 147, 106, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.launch svg { width: 22px; height: 22px; }
+.launch:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(18, 147, 106, 0.45); }
+.launch:active { transform: translateY(1px); }
+.launch:disabled { filter: grayscale(1); opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.launch.running {
+  background: linear-gradient(135deg, #eb6834 0%, #eda100 100%);
+  box-shadow: 0 6px 20px rgba(235, 104, 52, 0.40);
+  animation: launch-pulse 1.6s ease-in-out infinite;
+}
+@keyframes launch-pulse {
+  0%, 100% { box-shadow: 0 6px 20px rgba(235, 104, 52, 0.35); }
+  50% { box-shadow: 0 6px 30px rgba(235, 104, 52, 0.75); }
+}
+@media (prefers-reduced-motion: reduce) { .launch.running { animation: none; } }
 .message { margin: 0 0 10px; padding: 9px 12px; border-radius: 10px; font-size: 0.86rem; }
 .message.error { background: rgba(229, 72, 72, 0.10); border: 1px solid rgba(229, 72, 72, 0.4); }
 .message.warning { background: rgba(250, 178, 25, 0.12); border: 1px solid rgba(250, 178, 25, 0.45); }
@@ -429,10 +497,12 @@ h2 .info { vertical-align: 3px; }
   color: #dfe8f5;
 }
 .log div { white-space: pre-wrap; word-break: break-word; }
-.log .info { color: var(--good); }
-.log .value { color: var(--value); }
-.log .warn { color: var(--warn); }
-.log .error { color: var(--bad); }
+/* a line's level is lv-*: a bare .info is the (i) of the helps, a 16 px
+   circle, and the log's green lines once took it (one letter per line) */
+.log .lv-info { color: var(--good); }
+.log .lv-value { color: var(--value); }
+.log .lv-warn { color: var(--warn); }
+.log .lv-error { color: var(--bad); }
 
 /* ── plots ──────────────────────────────────────────────────────────── */
 .plot { width: 100%; }

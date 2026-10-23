@@ -174,6 +174,7 @@ async function loadStrings() {
   document.querySelectorAll('[data-help]').forEach((node) => { node.textContent = 'i'; node.dataset.tip = helpHtml(t(`help_${node.dataset.help}`)); });
   $('lang').textContent = T.lang_switch;
   applyTheme();
+  updateLaunch(null);
   $('skip_pca2d').replaceChildren(
     el('option', { value: '', text: t('skip_auto') }),
     el('option', { value: 'true', text: t('skip_keep') }),
@@ -384,6 +385,22 @@ function toggle(name) {
   loadPoints();
   drawPerTarget();
   wrapEdited = false;
+  followTicked();
+}
+
+// the instrument follows the ticked targets when they are all of one other
+//   family than the one chosen (SPIRou spectra run as NIRPS_HE, 2026-10-23)
+const family = (name) => String(name || '').toUpperCase().split('_')[0].replace(/[^A-Z0-9]/g, '');
+async function followTicked() {
+  const found = [...new Set(TARGETS.filter((row) => S.ticked.includes(row.name)).map((row) => guessInstrument(row.instrument)))];
+  if (found.length !== 1 || !found[0] || family(found[0]) === family(S.instrument)) return;
+  S.instrument = found[0];
+  S.instrument_set = true;
+  $('instrument').value = S.instrument;
+  fillSources();
+  save();
+  await loadInstrumentThings();
+  $('target_notes').textContent = t('instrument_followed', S.instrument);
 }
 
 async function loadPoints() {
@@ -578,6 +595,13 @@ async function loadInstrumentThings() {
   if (S.data_dir) {
     BASES = await api.get('/api/bases', { data_dir: S.data_dir, instrument: S.instrument, source: S.source });
     TEMPLATES = await api.get('/api/templates', { data_dir: S.data_dir, instrument: S.instrument });
+    // a frozen basis of another instrument or source cannot stay chosen
+    const basis = S.pca2d.input_name;
+    if (basis && !BASES.some((b) => b.compatible && b.name === basis)) {
+      delete S.pca2d.input_name;
+      save();
+      $('target_notes').textContent = t('basis_dropped', basis, S.instrument, S.source);
+    }
   }
   drawOptions();
   drawSwitches();
@@ -606,9 +630,9 @@ function control(row) {
   if (row.key === 'input_name') {
     const select = el('select', { class: set ? 'set' : '', onchange: (event) => setOption(row, event.target.value || null) },
       el('option', { value: '', text: t('basis_none') }),
-      ...BASES.map((b) => el('option', {
-        value: b.name, disabled: !b.compatible,
-        text: b.compatible ? t('basis_label', b.name, b.n_earth ?? '?', b.objects.length) : `${b.name}: ${t('basis_other', b.instrument, b.source)}`,
+      // only the bases of this instrument and data source: LBL refuses the others
+      ...BASES.filter((b) => b.compatible).map((b) => el('option', {
+        value: b.name, text: t('basis_label', b.name, b.n_earth ?? '?', b.objects.length),
       })));
     select.value = value || '';
     return select;
@@ -679,9 +703,19 @@ function drawSwitches() {
 function drawPerTarget() {
   const rows = S.ticked.map((name) => {
     const target = TARGETS.find((row) => row.name === name) || {};
-    const choices = [...new Set([...TEMPLATES.filter((n) => !n.endsWith('_pca2d') && n !== name), ...S.ticked.filter((n) => n !== name)])];
+    // every template offered says its temperature: the header's for those
+    //   in templates/, the scan's for a ticked target's own
+    const temps = {};
+    TEMPLATES.forEach((tp) => { if (tp.teff) temps[tp.name] = tp.teff; });
+    TARGETS.forEach((row) => { if (row.teff && !temps[row.name]) temps[row.name] = row.teff; });
+    const labelled = (n) => `${n} (${temps[n] ? Math.round(temps[n]) : '?'} K)`;
+    const others = TEMPLATES.map((tp) => tp.name).filter((n) => !/_pca2d(_|$)/.test(n) && !/_tc$/.test(n) && n !== name);
+    const choices = [...new Set([...others, ...S.ticked.filter((n) => n !== name)])]
+      .sort((a, b) => (temps[a] || 1e9) - (temps[b] || 1e9));
+    const own = S.teff[name] || target.teff || temps[name];
     const select = el('select', { onchange: (event) => { if (event.target.value) S.comparison[name] = event.target.value; else delete S.comparison[name]; wrapEdited = false; save(); } },
-      el('option', { value: '', text: t('comparison_self') }), ...choices.map((c) => el('option', { value: c, text: c })));
+      el('option', { value: '', text: own ? `${t('comparison_self')} (${Math.round(own)} K)` : t('comparison_self') }),
+      ...choices.map((c) => el('option', { value: c, text: labelled(c) })));
     select.value = S.comparison[name] || '';
     const teff = el('input', {
       type: 'number', step: 10, value: S.teff[name] ?? '', placeholder: target.teff ? Math.round(target.teff) : '',
@@ -741,6 +775,59 @@ async function loadWrap() {
 }
 
 // ── run ─────────────────────────────────────────────────────────────────
+// the big button: green to run, orange and pulsing while a run goes
+function updateLaunch(running) {
+  const button = $('queue');
+  button.classList.toggle('running', Boolean(running));
+  $('launch_label').textContent = running
+    ? t('launch_running', [running.stage, running.counter].filter(Boolean).join(' ') || t('state_running'))
+    : t('launch');
+  button.title = running ? t('launch_more') : '';
+}
+
+// ── the wrap, with Python's colours ─────────────────────────────────────
+// one pass over the text: comments, strings (triple-quoted first), numbers,
+//   keywords, constants and calls; everything else as it is. The coloured
+//   copy sits under a transparent textarea that keeps the editing
+const PY_KEYWORDS = new Set(('and as assert break class continue def del elif else except finally for from global if import in '
+  + 'is lambda nonlocal not or pass raise return try while with yield').split(' '));
+const PY_CONSTANTS = new Set(['True', 'False', 'None']);
+const PY_TOKEN = /(#[^\n]*)|("""[\s\S]*?(?:"""|$)|'''[\s\S]*?(?:'''|$)|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(\b\d+(?:\.\d*)?(?:[eE][-+]?\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)/g;
+function highlightPython(text) {
+  let out = '';
+  let last = 0;
+  let match;
+  PY_TOKEN.lastIndex = 0;
+  while ((match = PY_TOKEN.exec(text)) !== null) {
+    out += esc(text.slice(last, match.index));
+    const [token, comment, string, number, word] = match;
+    let kind = null;
+    if (comment) kind = 'cm';
+    else if (string) kind = 'st';
+    else if (number) kind = 'nu';
+    else if (word && PY_KEYWORDS.has(word)) kind = 'kw';
+    else if (word && PY_CONSTANTS.has(word)) kind = 'co';
+    else if (word && text[PY_TOKEN.lastIndex] === '(') kind = 'fn';
+    out += kind ? `<span class="py-${kind}">${esc(token)}</span>` : esc(token);
+    last = PY_TOKEN.lastIndex;
+  }
+  // a last newline needs a line under it, or the copy stops one line short
+  return `${out}${esc(text.slice(last))}\n`;
+}
+function highlightWrap() {
+  $('wrap_hl').innerHTML = highlightPython($('wrap_text').value);
+  syncWrapScroll();
+}
+function syncWrapScroll() {
+  const pre = $('wrap_hl').parentElement;
+  pre.scrollTop = $('wrap_text').scrollTop;
+  pre.scrollLeft = $('wrap_text').scrollLeft;
+}
+function setWrap(text) {
+  $('wrap_text').value = text || '';
+  highlightWrap();
+}
+
 function buildState() {
   const teff = {};
   S.ticked.forEach((name) => {
@@ -754,6 +841,9 @@ function buildState() {
     extra: S.extra, pca2d_extra: S.pca2d_extra,
     min_rjd: S.min_rjd, max_rjd: S.max_rjd, resproj: S.resproj,
     name: S.name_auto ? '' : S.name,
+    lang: S.lang,
+    // the instrument each target's headers give, checked against the one chosen
+    instruments: Object.fromEntries(S.ticked.map((n) => [n, (TARGETS.find((row) => row.name === n) || {}).instrument || ''])),
   };
 }
 
@@ -768,7 +858,7 @@ async function build() {
   const data = await api.post('/api/build', buildState());
   if (data.error) { showMessages([data.error], []); return null; }
   if (S.name_auto) { S.name = data.name; $('run_name').value = data.name; }
-  $('wrap_text').value = data.wrap;
+  setWrap(data.wrap);
   wrapEdited = false;
   showMessages(data.errors, data.warnings);
   $('queue').disabled = Boolean(data.errors && data.errors.length);
@@ -786,7 +876,7 @@ async function queue() {
 async function saveWrap(overwrite) {
   const data = await api.post('/api/save_wrap', { data_dir: S.data_dir, name: S.name, wrap: $('wrap_text').value, overwrite });
   if (data.exists && !overwrite) {
-    if (await confirmBox(`${data.error}: overwrite?`)) saveWrap(true);
+    if (await confirmBox(t('overwrite_q', data.path || data.error))) saveWrap(true);
     return;
   }
   $('save_status').textContent = data.path ? t('saved', data.path) : (data.error || '');
@@ -807,6 +897,7 @@ async function pollQueue() {
     const running = jobs.find((job) => job.state === 'running') || jobs[jobs.length - 1];
     if (running) selectJob(running.id);
   }
+  updateLaunch(jobs.find((j) => j.state === 'running'));
   const job = jobs.find((j) => j.id === selectedJob);
   if (job) {
     $('log_stage').textContent = [job.stage, job.counter].filter(Boolean).join(' · ');
@@ -830,9 +921,10 @@ function selectJob(id) {
     payload.events.forEach((event) => {
       if (event.op === 'replace' && logLast) {
         logLast.textContent = event.text;
-        logLast.className = event.level;
+        logLast.className = `lv-${event.level}`;
       } else {
-        logLast = el('div', { class: event.level, text: event.text });
+        // lv-: a line's level; a bare 'info' is the (i) of the helps
+        logLast = el('div', { class: `lv-${event.level}`, text: event.text });
         box.append(logLast);
         while (box.childElementCount > LOG_LINES) box.firstElementChild.remove();
       }
@@ -978,7 +1070,7 @@ async function init() {
   $('instrument').onchange = async (event) => { S.instrument = event.target.value; S.instrument_set = true; fillSources(); save(); await loadInstrumentThings(); wrapEdited = false; };
   $('source').onchange = async (event) => { S.source = event.target.value; save(); await loadInstrumentThings(); wrapEdited = false; };
   $('python').onchange = (event) => { S.python = event.target.value.trim(); save(); };
-  $('tick_all').onclick = () => { S.ticked = TARGETS.filter((row) => !S.hidden_instruments.includes(row.instrument)).map((row) => row.name); save(); drawTargets(); loadPoints(); drawPerTarget(); };
+  $('tick_all').onclick = () => { S.ticked = TARGETS.filter((row) => !S.hidden_instruments.includes(row.instrument)).map((row) => row.name); save(); drawTargets(); loadPoints(); drawPerTarget(); followTicked(); };
   $('tick_none').onclick = () => { S.ticked = []; save(); drawTargets(); loadPoints(); drawPerTarget(); };
   const bound = (key) => (event) => { S[key] = event.target.value === '' ? null : Number(event.target.value); save(); drawPlots(); wrapEdited = false; };
   $('min_rjd').onchange = bound('min_rjd');
@@ -988,7 +1080,8 @@ async function init() {
   $('resproj').onchange = (event) => { S.resproj = event.target.checked; save(); wrapEdited = false; };
   $('run_name').oninput = (event) => { S.name = event.target.value.trim(); S.name_auto = false; save(); };
   $('name_auto').onclick = () => { S.name_auto = true; save(); build(); };
-  $('wrap_text').oninput = () => { wrapEdited = true; };
+  $('wrap_text').oninput = () => { wrapEdited = true; highlightWrap(); };
+  $('wrap_text').onscroll = syncWrapScroll;
   $('check').onclick = build;
   $('load_wrap').onclick = loadWrap;
   $('wrap_list').onchange = (event) => { $('wrap_path').value = event.target.value; };
@@ -1001,6 +1094,7 @@ async function init() {
 
   await loadInstrumentThings();
   await loadTargets();
+  await followTicked();
   setBackdrop();
   showTab(S.tab || 'targets');
   pollQueue();

@@ -107,6 +107,23 @@ def test_a_basis_of_another_instrument_is_refused(data_dir):
     assert any("refuses" in e for e in built["errors"])
 
 
+def test_spectra_of_another_instrument_are_refused(data_dir):
+    # SPIRou spectra run as NIRPS_HE made a NIRPS template of them and
+    #   stopped on the first lblrv file (2026-10-23)
+    built = wrapgen.build(_state(data_dir, instruments={"STAR": "SPIROU"}))
+    assert any("SPIROU" in e and "NIRPS_HE" in e for e in built["errors"])
+    for header in ("NIRPS", "?", "", "NIRPS/SPIROU"):
+        built = wrapgen.build(_state(data_dir, instruments={"STAR": header}))
+        assert built["errors"] == [], header
+
+
+def test_the_wrap_speaks_the_window_language(data_dir):
+    built = wrapgen.build(_state(data_dir, targets=[], lang="fr"))
+    assert "aucune cible cochée" in built["errors"]
+    built = wrapgen.build(_state(data_dir, teff={}, lang="fr"))
+    assert built["warnings"][0].startswith("pas de température effective")
+
+
 def test_the_cleanup_deletes_only_what_can_be_remade(data_dir, tmp_path):
     cache = data_dir / "pca2d" / "cache" / "cube_x"
     cache.mkdir(parents=True)

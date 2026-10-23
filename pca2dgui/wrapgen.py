@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import datetime
 import os
+import re
 import sys
 
-from . import lblinfo
+from . import i18n, lblinfo
 
 #: the PCA2D options a wrap writes whenever they are chosen, even at their
 #:    default (the rest only when they differ from it); one left unchosen is
@@ -40,28 +41,51 @@ def _coerce(value, kind: str):
     return str(value)
 
 
+def _family(name) -> str:
+    """An instrument's family, the headers' way or LBL's: NIRPS for NIRPS,
+    NIRPS_HE and NIRPS_HA, HARPSN for HARPS-N. Empty when unknown."""
+    name = str(name or "").upper()
+    if not name or name == "?" or "/" in name:
+        return ""
+    return re.sub(r"[^A-Z0-9]", "", name.split("_")[0])
+
+
 def build(state: dict) -> dict:
     """The run parameters of a wrap from the window's state: dict(rparams,
     errors, warnings). Nothing is written."""
     errors, warnings = [], []
+    # the window's language, for what it says (i18n's err_* and warn_*)
+    words = i18n.strings(state.get("lang") or "en")
+
+    def say(key, *args):
+        return words[key] % tuple(str(a) for a in args)
     data_dir = os.path.abspath(os.path.expanduser(state.get("data_dir") or ""))
     instrument = state.get("instrument") or ""
     source = state.get("source") or "None"
     targets = [t for t in state.get("targets") or [] if t]
     if not data_dir or not os.path.isdir(data_dir):
-        errors.append("the data folder %r is not there" % data_dir)
+        errors.append(say("err_no_folder", data_dir))
     if not instrument:
-        errors.append("no instrument")
+        errors.append(say("err_no_instrument"))
     if not targets:
-        errors.append("no target ticked")
+        errors.append(say("err_no_target"))
     known = {row["instrument"]: row for row in lblinfo.instruments()}
     sources = {s["source"]: s for s in
                (known.get(instrument) or {}).get("sources", [])}
     if instrument and instrument not in known:
-        errors.append("LBL does not know the instrument %r" % instrument)
+        errors.append(say("err_unknown_instrument", instrument))
     elif instrument and str(source) not in sources:
-        errors.append("%s has no data source %r (LBL knows %s)"
-                      % (instrument, source, ", ".join(sources)))
+        errors.append(say("err_no_source", instrument, source,
+                          ", ".join(sources)))
+    # THE SPECTRA ARE THE INSTRUMENT'S: SPIRou files run as NIRPS_HE made a
+    #   NIRPS template of SPIRou spectra and stopped on the first lblrv file
+    #   (2026-10-23). The headers' instrument against the one chosen, by
+    #   family (NIRPS for NIRPS_HE and NIRPS_HA)
+    for target, header in (state.get("instruments") or {}).items():
+        if target in targets and instrument and _family(header) \
+                and _family(header) != _family(instrument):
+            errors.append(say("err_wrong_instrument", target, header,
+                              instrument))
     rparams = dict()
     rparams["INSTRUMENT"] = instrument
     rparams["DATA_SOURCE"] = source
@@ -79,19 +103,15 @@ def build(state: dict) -> dict:
         except (TypeError, ValueError):
             value = None
         if value is None:
-            warnings.append("no effective temperature for %s: LBL gets %d K"
-                            " (it only picks the stellar model of the mask)"
-                            % (target, TEFF_FALLBACK))
+            warnings.append(say("warn_no_teff", target, TEFF_FALLBACK))
             value = TEFF_FALLBACK
         teffs.append(int(round(value)))
     rparams["OBJECT_TEFF"] = teffs
-    templates = set(lblinfo.templates(data_dir, instrument))
+    templates = {row["name"] for row in lblinfo.templates(data_dir, instrument)}
     for target, other in zip(targets, rparams["OBJECT_COMPARISON"]):
         if other != target and other not in templates and not os.path.isdir(
                 os.path.join(data_dir, "science", other)):
-            errors.append("%s's comparison %s has neither a template in"
-                          " templates/ nor spectra in science/"
-                          % (target, other))
+            errors.append(say("err_no_comparison", target, other))
     # the LBL switches
     lbl = state.get("lbl") or {}
     telluclean = (sources.get(str(source)) or {}).get("telluclean", False)
@@ -122,8 +142,8 @@ def build(state: dict) -> dict:
             try:
                 value = _coerce(chosen[key], row["kind"])
             except (TypeError, ValueError):
-                errors.append("PCA2D %s: %r is not a %s"
-                              % (key, chosen[key], row["kind"]))
+                errors.append(say("err_pca2d_kind", key, repr(chosen[key]),
+                                  row["kind"]))
                 continue
             if key in ALWAYS or value != row["default"]:
                 if value is not None or row["default"] is not None:
@@ -135,25 +155,23 @@ def build(state: dict) -> dict:
         for key, value in (state.get("pca2d_extra") or {}).items():
             pca2d.setdefault(key, value)
         if pca2d.get("joint") and len(targets) < 2:
-            warnings.append("a joint fit needs two targets or more: left out")
+            warnings.append(say("warn_joint"))
             pca2d.pop("joint")
         if pca2d.get("input_name"):
             found = [b for b in lblinfo.bases(data_dir, instrument, source)
                      if b["name"] == pca2d["input_name"]]
             if not found:
-                errors.append("no observer basis %r in %s"
-                              % (pca2d["input_name"],
-                                 os.path.join(data_dir, lblinfo.BASES)))
+                errors.append(say("err_no_basis", pca2d["input_name"],
+                                  os.path.join(data_dir, lblinfo.BASES)))
             elif not found[0]["compatible"]:
-                errors.append("the basis %r was made with %s %s, this run is"
-                              " %s %s: LBL refuses it"
-                              % (pca2d["input_name"], found[0]["instrument"],
-                                 found[0]["source"], instrument, source))
+                errors.append(say("err_basis_other", pca2d["input_name"],
+                                  found[0]["instrument"], found[0]["source"],
+                                  instrument, source))
         try:
             from lbl.recipes import lbl_pca2d
             lbl_pca2d.settings(dict(pca2d), report=rparams.get("REPORT", True))
         except Exception as exc:                          # noqa: BLE001
-            errors.append("PCA2D: %s" % exc)
+            errors.append(say("err_pca2d", exc))
         rparams["PCA2D"] = pca2d
         skip = state.get("skip_pca2d")
         if skip is not None:
