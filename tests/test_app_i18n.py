@@ -53,7 +53,7 @@ def _post(url, body):
 def test_pages_and_json(server):
     base, tmp = server
     status, page = _get(base + "/")
-    assert status == 200 and b"pca2d-gui" in page
+    assert status == 200 and b"<title>LBL</title>" in page
     strings = json.loads(_get(base + "/api/strings?lang=fr")[1])
     assert strings["tab_targets"] == "Cibles"
     state = json.loads(_get(base + "/api/state")[1])
