@@ -1,6 +1,6 @@
 """The window's server: a page, its JSON, and the live log, on 127.0.0.1.
 
-    pca2d-gui [--data-dir DIR] [--port 8765] [--no-browser]
+    lbl-gui [--data-dir DIR] [--port 8765] [--no-browser]
 
 Standard library only (http.server, one thread per request): the window
 installs with nothing LBL does not already need. It listens on the local
@@ -102,7 +102,7 @@ def suggest_name(state: dict, rparams: dict) -> str:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "pca2d-gui/" + __version__
+    server_version = "lbl-gui/" + __version__
     ctx: Context = None
 
     # -- plumbing ------------------------------------------------------------
@@ -455,7 +455,7 @@ def main(argv=None):
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.daemon_threads = True
     url = "http://127.0.0.1:%d/" % server.server_address[1]
-    print("pca2d-gui %s at %s (LBL from %s); Ctrl+C to stop"
+    print("lbl-gui %s at %s (LBL from %s); Ctrl+C to stop"
           % (__version__, url, lblinfo.lbl_home()), flush=True)
     if not args.no_browser:
         threading.Timer(0.6, webbrowser.open, args=(url,)).start()

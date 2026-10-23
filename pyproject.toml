@@ -15,7 +15,6 @@ authors = [{ name = "Etienne Artigau" }]
 dependencies = ["numpy", "astropy", "pyyaml"]
 
 [project.scripts]
-pca2d-gui = "pca2dgui.app:main"
 lbl-gui = "pca2dgui.app:main"
 
 [tool.setuptools]

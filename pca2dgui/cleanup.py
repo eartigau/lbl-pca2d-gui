@@ -140,7 +140,7 @@ def busy(data_dir: str) -> list:
             command = ""
         # the multiprocessing helpers of a run are the run, and a window
         #   is not one
-        if "resource_tracker" in command or "pca2d-gui" in command:
+        if "resource_tracker" in command or "lbl-gui" in command:
             continue
         procs.append(dict(pid=pid, command=command[:200]))
     return procs

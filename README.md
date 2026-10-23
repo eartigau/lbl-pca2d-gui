@@ -79,8 +79,6 @@ lbl-gui --data-dir ~/lbl-pca2d-demo      # on this data folder
 lbl-gui --port 8800 --no-browser         # another port, no browser
 ```
 
-`pca2d-gui` is the same command, under its first name.
-
 The window listens on the local machine only (`127.0.0.1`) and serves files
 from the data folders it is given only. What it remembers between sessions
 (the data folder, the ticked targets, the options) is in

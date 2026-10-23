@@ -1,7 +1,7 @@
 """lbl-pca2d-gui: a browser window that builds, runs and follows LBL wraps
 with the PCA2D precleaning (LBL's lbl-pca2d branch).
 
-    pca2d-gui                  # opens the window in the browser
+    lbl-gui                    # opens the window in the browser
 
 The window writes an ordinary LBL wrap (wrap.py, which runs by hand too) for
 the targets and options picked, runs it in the environment LBL is installed
