@@ -293,6 +293,7 @@ table.data td.num { font-family: "IBM Plex Mono", monospace; text-align: right; 
 table.data td.mono { font-family: "IBM Plex Mono", monospace; }
 table.data tr:hover td { background: var(--row-hover); }
 table.data tr.ticked td { background: var(--row-ticked); }
+table.data tr.reading td { color: var(--muted); }
 table.data tr.group td {
   background: var(--th-bg);
   color: var(--muted);
@@ -451,6 +452,7 @@ h2 .info { vertical-align: 3px; }
 .message.error { background: rgba(229, 72, 72, 0.10); border: 1px solid rgba(229, 72, 72, 0.4); }
 .message.warning { background: rgba(250, 178, 25, 0.12); border: 1px solid rgba(250, 178, 25, 0.45); }
 .message ul { margin: 4px 0 0; padding-left: 18px; }
+.message.big { font-size: 0.95rem; padding: 16px 18px; }
 .job {
   border: 1px solid var(--line);
   border-radius: 12px;

@@ -91,3 +91,16 @@ def test_files_are_served_from_the_data_folder_only(server):
     with pytest.raises(urllib.error.HTTPError) as error:
         _get(base + "/file?path=%s" % (tmp / "secret.pdf"))
     assert error.value.code == 403
+
+
+def test_the_targets_say_when_there_is_no_folder(server, tmp_path):
+    base, tmp = server
+    import shutil
+    got = json.loads(_get(base + "/api/targets?data_dir=%s" % (tmp / "data"))[1])
+    assert got["science"] == "ok" and [r["name"] for r in got["targets"]] == ["STAR"]
+    shutil.rmtree(tmp / "data" / "science" / "STAR")
+    got = json.loads(_get(base + "/api/targets?data_dir=%s" % (tmp / "data"))[1])
+    assert got["science"] == "empty" and got["targets"] == []
+    shutil.rmtree(tmp / "data" / "science")
+    got = json.loads(_get(base + "/api/targets?data_dir=%s" % (tmp / "data"))[1])
+    assert got["science"] == "missing"

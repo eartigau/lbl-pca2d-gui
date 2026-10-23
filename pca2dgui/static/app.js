@@ -37,7 +37,7 @@ let selectedJob = null;
 let stream = null;
 let logLast = null;
 let scanTimer = null;
-let rescanned = false;
+let SCIENCE = { state: 'ok', folder: '' };
 
 // ── plumbing ────────────────────────────────────────────────────────────
 const api = {
@@ -250,11 +250,15 @@ function guessInstrument(header) {
 
 // ── targets ─────────────────────────────────────────────────────────────
 async function loadTargets() {
-  if (!S.data_dir) { TARGETS = []; drawTargets(); return; }
+  if (!S.data_dir) { TARGETS = []; SCIENCE = { state: 'none', folder: '' }; drawTargets(); return; }
   const data = await api.get('/api/targets', { data_dir: S.data_dir });
   if (data.error) { $('scan_status').textContent = data.error; return; }
   TARGETS = data.targets || [];
+  SCIENCE = { state: data.science || 'ok', folder: data.folder || '' };
   const scan = data.scan || {};
+  // the server reads the headers by itself (one file per folder first):
+  //   the page follows while it does
+  if (scan.running && !scanTimer) scanTimer = setInterval(loadTargets, 1500);
   if (scan.running && scan.data_dir) {
     $('scan_status').textContent = t('scanning', scan.done, scan.total);
   } else {
@@ -262,13 +266,6 @@ async function loadTargets() {
     $('scan_status').textContent = TARGETS.length ? t('scan_done', TARGETS.length, files) : t('data_dir_hint');
   }
   if (!scan.running && scanTimer) { clearInterval(scanTimer); scanTimer = null; }
-  // spectra on disk the index has not read (a new folder, or an index of an
-  //   older shape): read them, once per page
-  if (!scan.running && !rescanned && TARGETS.some((row) => (row.files || 0) < (row.on_disk || 0))) {
-    rescanned = true;
-    scan();
-    return;
-  }
   // an instrument from the targets when none was chosen yet
   if (!S.instrument_set) {
     const counts = {};
@@ -314,6 +311,13 @@ function colourOf(name) {
 }
 
 function drawTargets() {
+  // no folder to read: said instead of an empty table
+  const message = !S.data_dir ? t('no_data_dir')
+    : SCIENCE.state === 'missing' ? t('no_science', SCIENCE.folder)
+      : SCIENCE.state === 'empty' ? t('empty_science', SCIENCE.folder) : '';
+  $('targets_message').textContent = message;
+  $('targets_message').hidden = !message;
+  $('targets_wrap').hidden = Boolean(message);
   const instruments = [...new Set(TARGETS.map((row) => row.instrument))].sort();
   $('instrument_filters').replaceChildren(...instruments.map((name) => el('label', { class: 'check' },
     el('input', {
@@ -339,28 +343,36 @@ function drawTargets() {
   const body = rows.map((row) => {
     const ticked = S.ticked.includes(row.name);
     const colour = colourOf(row.name);
-    const reading = row.files < row.on_disk ? ` (${row.on_disk})` : '';
-    return el('tr', { class: ticked ? 'ticked' : '', ondblclick: () => toggle(row.name) },
+    const reading = (row.read || 0) < row.files;
+    // a target whose headers are not all read yet: its numbers are
+    //   provisional (greyed), its counts left out until they are
+    return el('tr', { class: [ticked ? 'ticked' : '', reading ? 'reading' : ''].join(' ').trim(), ondblclick: () => toggle(row.name) },
       el('td', {}, el('input', { type: 'checkbox', checked: ticked, onchange: () => toggle(row.name) })),
       el('td', {}, colour ? el('span', { class: 'swatch', style: `background:${colour}` }) : null, row.name),
       el('td', { text: row.instrument }),
-      el('td', { class: 'num', text: `${row.files}${reading}` }),
-      el('td', { class: 'num', text: row.nights || '' }),
+      el('td', { class: 'num', 'data-tip': reading ? t('read_of', row.read || 0, row.files) : null },
+        reading ? el('span', { class: 'muted', text: '… ' }) : null, String(row.files)),
+      el('td', { class: 'num', text: reading ? '' : (row.nights || '') }),
       el('td', { class: 'num', text: fmt(row.snr, 0) }),
       el('td', { class: 'num', text: fmt(row.exptime, 0) }),
       el('td', { class: 'num', text: row.berv_min === null ? '' : `${fmt(row.berv_min)} → ${fmt(row.berv_max)}` }),
-      el('td', { class: 'num', text: fmt(row.berv_span) }),
+      el('td', { class: 'num', text: reading ? '' : fmt(row.berv_span) }),
       el('td', { class: 'mono', text: row.first ? `${mjdDate(row.first).slice(0, 7)} → ${mjdDate(row.last).slice(0, 7)}` : '', 'data-tip': row.first ? `${mjdDate(row.first)} → ${mjdDate(row.last)}` : null }),
       el('td', { class: 'num', text: fmt(row.teff, 0) }));
   });
   $('targets_table').replaceChildren(el('thead', {}, head), el('tbody', {}, body));
   $('ticked').textContent = t('ticked', S.ticked.length, TARGETS.length);
   drawTiles();
-  const notes = [];
-  const mixed = new Set(TARGETS.filter((row) => S.ticked.includes(row.name)).map((row) => row.instrument));
-  if (mixed.size > 1) notes.push(t('mixed_instruments'));
-  if (S.ticked.length > 1) notes.push(t('joint_note'));
-  $('target_notes').textContent = notes.join(' · ');
+  // TICKED TARGETS OF MORE THAN ONE INSTRUMENT: said loudly, at once (a
+  //   wrap runs one instrument)
+  const byInstrument = {};
+  TARGETS.filter((row) => S.ticked.includes(row.name) && row.instrument && row.instrument !== '?')
+    .forEach((row) => { (byInstrument[family(row.instrument)] = byInstrument[family(row.instrument)] || []).push(row.name); });
+  const families = Object.keys(byInstrument);
+  $('target_errors').replaceChildren(...(families.length > 1 ? [el('div', { class: 'message error' },
+    el('strong', { text: t('err_mixed_title') }), ' ',
+    t('err_mixed', families.map((f) => `${f} : ${byInstrument[f].join(', ')}`).join(' · ')))] : []));
+  $('target_notes').textContent = S.ticked.length > 1 && families.length <= 1 ? t('joint_note') : '';
 }
 
 function drawTiles() {
@@ -1151,6 +1163,9 @@ async function setBackdrop() {
 async function init() {
   const state = await api.get('/api/state');
   Object.assign(S, JSON.parse(JSON.stringify(DEFAULTS)), state.state || {});
+  // the window opens on every target, none ticked, no instrument hidden
+  S.ticked = [];
+  S.hidden_instruments = [];
   document.documentElement.dataset.theme = S.theme;
   S.python = S.python || state.python;
   $('version').textContent = state.version;

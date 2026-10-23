@@ -70,6 +70,27 @@ def test_no_telluric_cleaning_on_nirps_and_spirou(data_dir):
     assert built["rparams"]["RUN_LBL_TELLUCLEAN"] is False
 
 
+def test_one_file_per_folder_first(tmp_path, monkeypatch):
+    for name in ("A", "B"):
+        folder = tmp_path / "science" / name
+        folder.mkdir(parents=True)
+        for i in range(3):
+            _apero(folder / ("%d.fits" % i), berv=1.0, mjd=60000.4 + i)
+    monkeypatch.setattr(targets, "INDEX_HOME", str(tmp_path / "idx"))
+    order = []
+    real = targets.read_file
+
+    def spy(path):
+        order.append(os.path.relpath(path, tmp_path / "science"))
+        return real(path)
+    monkeypatch.setattr(targets, "read_file", spy)
+    scanner = targets.Scanner()
+    scanner.start(str(tmp_path))
+    scanner.thread.join(30)
+    assert order[:2] == ["A/0.fits", "B/0.fits"] and len(order) == 6
+    assert not targets.incomplete(scanner.snapshot(), str(tmp_path))
+
+
 def test_the_scanner_reads_once(data_dir, monkeypatch, tmp_path):
     monkeypatch.setattr(targets, "INDEX_HOME", str(tmp_path / "index"))
     scanner = targets.Scanner()

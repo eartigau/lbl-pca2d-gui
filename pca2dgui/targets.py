@@ -247,10 +247,13 @@ class Scanner:
     def _run(self) -> None:
         data_dir = self.data_dir
         names = target_names(data_dir)
-        work = []
-        for name in names:
-            for path in files_of(data_dir, name):
-                work.append((name, path))
+        # ONE FILE PER FOLDER FIRST: every row gets its instrument, its
+        #   object and its Teff in a second, then the rest of the files fill
+        #   in its numbers
+        files = {name: files_of(data_dir, name) for name in names}
+        work = [(name, paths[0]) for name, paths in files.items() if paths]
+        work += [(name, path) for name, paths in files.items()
+                 for path in paths[1:]]
         with self.lock:
             self.total = len(work)
             # forget what is no longer there
@@ -287,7 +290,7 @@ class Scanner:
         with self.lock:
             # the files of a target that are gone
             for name in names:
-                present = {os.path.basename(p) for p in files_of(data_dir, name)}
+                present = {os.path.basename(p) for p in files[name]}
                 records = self.index["targets"].get(name, {})
                 for key in list(records):
                     if key not in present:
@@ -338,3 +341,12 @@ def points(records: dict) -> dict:
                 snr=[r.get("snr") for r in rows],
                 mjd=[r.get("mjd") for r in rows],
                 vsys=[r.get("vsys") for r in rows])
+
+
+def incomplete(index: dict, data_dir: str, names=None) -> bool:
+    """Whether some spectra of the folder are not in its index yet."""
+    for name in names if names is not None else target_names(data_dir):
+        records = (index.get("targets") or {}).get(name, {})
+        if len(records) < len(files_of(data_dir, name)):
+            return True
+    return False

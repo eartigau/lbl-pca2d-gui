@@ -188,20 +188,39 @@ class Handler(BaseHTTPRequestHandler):
                     data_dir, query.get("instrument", "")))
             if route == "/api/targets":
                 data_dir = ctx.allow(query.get("data_dir", ""))
+                science = os.path.join(data_dir, "science")
+                # no folder of targets: said, not an empty table
+                if not os.path.isdir(science):
+                    return self._json(dict(targets=[], science="missing",
+                                           folder=science,
+                                           scan=ctx.scanner.status()))
+                names = targets.target_names(data_dir)
+                if not names:
+                    return self._json(dict(targets=[], science="empty",
+                                           folder=science,
+                                           scan=ctx.scanner.status()))
                 status = ctx.scanner.status()
                 if status["data_dir"] == data_dir:
                     index = ctx.scanner.snapshot()
                 else:
                     index = targets.load_index(data_dir)
-                names = targets.target_names(data_dir)
+                # spectra the index has not read: read them, one file per
+                #   folder first (targets.Scanner), without being asked
+                if not (status["running"] and status["data_dir"] == data_dir) \
+                        and targets.incomplete(index, data_dir, names):
+                    ctx.scanner.start(data_dir)
+                    status = ctx.scanner.status()
                 rows = []
                 for name in names:
                     records = (index.get("targets") or {}).get(name, {})
                     row = targets.summary(records)
-                    row.update(name=name, on_disk=len(
-                        targets.files_of(data_dir, name)))
+                    on_disk = len(targets.files_of(data_dir, name))
+                    # files: on disk; read: in the index so far
+                    row.update(name=name, read=row["files"], files=on_disk,
+                               on_disk=on_disk)
                     rows.append(row)
-                return self._json(dict(targets=rows, scan=status))
+                return self._json(dict(targets=rows, scan=status,
+                                       science="ok", folder=science))
             if route == "/api/points":
                 data_dir = ctx.allow(query.get("data_dir", ""))
                 status = ctx.scanner.status()
