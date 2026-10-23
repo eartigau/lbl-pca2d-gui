@@ -18,6 +18,7 @@ const DEFAULTS = {
   lang: 'en', tab: 'targets', data_dir: '', instrument: '', source: '',
   python: '', ticked: [], hidden_instruments: [], sort: { key: 'name', dir: 1 },
   comparison: {}, teff: {}, lbl: {}, pca2d_on: true, pca2d: {},
+  extra: {}, pca2d_extra: {},
   skip_pca2d: null, min_rjd: null, max_rjd: null, resproj: false,
   name: '', name_auto: true,
 };
@@ -178,7 +179,7 @@ function showTab(name) {
   S.tab = name;
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.pane').forEach((p) => { p.hidden = p.id !== `pane-${name}`; });
-  if (name === 'run' && !wrapEdited) build();
+  if (name === 'run') { if (!wrapEdited) build(); loadWrapList(); }
   if (name === 'runs') loadRuns();
   if (name === 'cleanup') measure();
   if (name === 'targets') drawPlots();
@@ -246,6 +247,7 @@ async function loadTargets() {
 async function scan() {
   S.data_dir = $('data_dir').value.trim();
   save();
+  setBackdrop();
   const data = await api.post('/api/scan', { data_dir: S.data_dir });
   if (data.error) { $('scan_status').textContent = data.error; return; }
   await loadInstrumentThings();
@@ -525,6 +527,7 @@ async function loadInstrumentThings() {
   drawOptions();
   drawSwitches();
   drawPerTarget();
+  drawExtra();
 }
 
 const CHOICES = { weight: ['flux', 'velocity'], mask: ['common', 'exposure', 'none'] };
@@ -635,6 +638,52 @@ function drawPerTarget() {
     el('tbody', {}, rows.length ? rows : el('tr', {}, el('td', { colspan: 3, class: 'muted', text: t('no_points') }))));
 }
 
+function drawExtra() {
+  const show = (box, text, values) => {
+    const keys = Object.keys(values || {});
+    $(box).hidden = keys.length === 0;
+    $(text).textContent = keys.map((k) => `${k} = ${JSON.stringify(values[k])}`).join('\n');
+  };
+  show('extra_box', 'extra', S.extra);
+  show('pca2d_extra_box', 'pca2d_extra', S.pca2d_extra);
+}
+
+// ── loading a wrap ──────────────────────────────────────────────────────
+async function loadWrapList() {
+  if (!S.data_dir) return;
+  const wraps = await api.get('/api/wraps', { data_dir: S.data_dir });
+  if (!Array.isArray(wraps)) return;
+  $('wrap_list').replaceChildren(el('option', { value: '', text: t('load_pick') }),
+    ...wraps.map((w) => el('option', { value: w.path, text: `${w.name}  \u00B7  ${when(w.mtime)}` })));
+}
+
+async function loadWrap() {
+  const path = $('wrap_path').value.trim() || $('wrap_list').value;
+  if (!path) return;
+  const data = await api.post('/api/load_wrap', { path });
+  const box = $('load_messages');
+  if (data.error) { box.replaceChildren(el('div', { class: 'message error', text: data.error })); return; }
+  const loaded = data.state;
+  const keep = { lang: S.lang, tab: S.tab, python: S.python, sort: S.sort, hidden_instruments: S.hidden_instruments };
+  Object.assign(S, JSON.parse(JSON.stringify(DEFAULTS)), keep, loaded,
+    { name: loaded.name || '', name_auto: !loaded.name, instrument_set: true });
+  const notes = [t('loaded', data.path), ...(data.notes || [])];
+  if (data.skipped && data.skipped.length) notes.push(t('load_skipped', data.skipped.join(', ')));
+  box.replaceChildren(el('div', { class: 'message warning' }, el('ul', {}, notes.map((n) => el('li', { text: n })))));
+  $('data_dir').value = S.data_dir;
+  $('run_name').value = S.name;
+  $('min_rjd').value = S.min_rjd ?? '';
+  $('max_rjd').value = S.max_rjd ?? '';
+  $('skip_pca2d').value = S.skip_pca2d === null || S.skip_pca2d === undefined ? '' : String(S.skip_pca2d);
+  fillInstruments();
+  save();
+  await loadInstrumentThings();
+  await loadTargets();
+  drawExtra();
+  wrapEdited = false;
+  await build();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────
 function buildState() {
   const teff = {};
@@ -646,6 +695,7 @@ function buildState() {
     data_dir: S.data_dir, instrument: S.instrument, source: S.source, python: S.python,
     targets: S.ticked, comparison: S.comparison, teff, lbl: S.lbl,
     pca2d_on: S.pca2d_on, pca2d: S.pca2d, skip_pca2d: S.skip_pca2d,
+    extra: S.extra, pca2d_extra: S.pca2d_extra,
     min_rjd: S.min_rjd, max_rjd: S.max_rjd, resproj: S.resproj,
     name: S.name_auto ? '' : S.name,
   };
@@ -821,6 +871,29 @@ async function deleteSelected() {
   measure();
 }
 
+// ── background ──────────────────────────────────────────────────────────
+let backdropFor = null;
+async function setBackdrop() {
+  if (!S.data_dir || backdropFor === S.data_dir) return;
+  backdropFor = S.data_dir;
+  const folder = S.data_dir;
+  for (let i = 0; i < 60 && folder === S.data_dir; i += 1) {
+    const status = await api.get('/api/backdrop_status', { data_dir: folder });
+    if (status.none) return;
+    if (status.ready) {
+      const url = `/api/backdrop?data_dir=${encodeURIComponent(folder)}&k=${status.key}`;
+      const image = new Image();
+      image.onload = () => {
+        $('backdrop').style.backgroundImage = `url("${url}")`;
+        $('backdrop').classList.add('ready');
+      };
+      image.src = url;
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+}
+
 // ── start ───────────────────────────────────────────────────────────────
 async function init() {
   const state = await api.get('/api/state');
@@ -856,6 +929,8 @@ async function init() {
   $('name_auto').onclick = () => { S.name_auto = true; save(); build(); };
   $('wrap_text').oninput = () => { wrapEdited = true; };
   $('check').onclick = build;
+  $('load_wrap').onclick = loadWrap;
+  $('wrap_list').onchange = (event) => { $('wrap_path').value = event.target.value; };
   $('queue').onclick = queue;
   $('save_wrap').onclick = () => saveWrap(false);
   $('stop').onclick = stopJob;
@@ -865,6 +940,7 @@ async function init() {
 
   await loadInstrumentThings();
   await loadTargets();
+  setBackdrop();
   showTab(S.tab || 'targets');
   pollQueue();
   setInterval(pollQueue, 2000);

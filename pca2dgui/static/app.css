@@ -315,3 +315,34 @@ table.data tr.group td {
 }
 .modal-card { max-width: 640px; width: 92vw; }
 .modal-card p { white-space: pre-wrap; max-height: 50vh; overflow: auto; }
+
+/* ── loading a wrap, and what the window keeps as it is ─────────────── */
+.load { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 6px; }
+.load select { width: 20em; flex: 0 0 auto; }
+.load input { flex: 1 1 auto; }
+.extra { margin-top: 12px; }
+#extra, #pca2d_extra { white-space: pre-wrap; }
+
+/* ── the background: the data folder's own results, blurred (backdrop.py) */
+.backdrop {
+  position: fixed;
+  inset: -60px;
+  z-index: -3;
+  background-size: cover;
+  background-position: center;
+  filter: blur(3px) saturate(1.3);
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.backdrop.ready { opacity: 0.85; }
+.backdrop-veil {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: radial-gradient(1400px 900px at 50% 40%, rgba(8, 17, 31, 0.30) 0%, rgba(8, 17, 31, 0.70) 100%);
+}
+.bg-orb { z-index: -1; opacity: 0.18; }
+
+/* the cards let the results behind them show a little more than the
+   shared theme's 0.82 */
+.card { background: rgba(14, 24, 42, 0.76); }

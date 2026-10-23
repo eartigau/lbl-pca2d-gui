@@ -21,8 +21,9 @@ import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from . import __version__, cleanup, history, i18n, lblinfo, runner, targets
-from . import wrapgen
+from . import __version__, backdrop, cleanup, history, i18n, lblinfo, runner
+from . import targets
+from . import wrapgen, wrapload
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 #: what the window remembers between sessions
@@ -232,6 +233,20 @@ class Handler(BaseHTTPRequestHandler):
                     window=history.window_runs(data_dir),
                     pca2d=history.pca2d_runs(data_dir),
                     reports=history.reports(data_dir)))
+            if route == "/api/backdrop_status":
+                data_dir = ctx.allow(query.get("data_dir", ""))
+                path, ready = backdrop.ensure(data_dir)
+                return self._json(dict(ready=ready, none=path is None,
+                                       key=os.path.basename(path or "")))
+            if route == "/api/backdrop":
+                data_dir = ctx.allow(query.get("data_dir", ""))
+                path, ready = backdrop.path_of(data_dir)
+                if not ready:
+                    return self.send_error(HTTPStatus.NOT_FOUND)
+                return self._file(path, "image/png")
+            if route == "/api/wraps":
+                data_dir = ctx.allow(query.get("data_dir", ""))
+                return self._json(wrapload.wraps_in(data_dir))
             if route == "/api/cleanup":
                 data_dir = ctx.allow(query.get("data_dir", ""))
                 return self._json(dict(items=cleanup.survey(data_dir),
@@ -324,6 +339,25 @@ class Handler(BaseHTTPRequestHandler):
                     handle.write(body.get("wrap", ""))
                 os.chmod(path, 0o755)
                 return self._json(dict(path=path))
+            if route == "/api/load_wrap":
+                path = os.path.abspath(os.path.expanduser(body.get("path",
+                                                                   "")))
+                if not path.endswith(".py") or not os.path.isfile(path):
+                    return self._json(dict(error="%s is not a wrap (.py)"
+                                           % path), HTTPStatus.BAD_REQUEST)
+                parsed = wrapload.read(path)
+                loaded = wrapload.to_state(parsed["rparams"])
+                if loaded["state"].get("data_dir"):
+                    ctx.allow(loaded["state"]["data_dir"])
+                name = os.path.splitext(os.path.basename(path))[0]
+                if name == "wrap":
+                    name = os.path.basename(os.path.dirname(path))
+                elif name.startswith("wrap_"):
+                    name = name[len("wrap_"):]
+                loaded["state"]["name"] = name
+                return self._json(dict(state=loaded["state"],
+                                       notes=loaded["notes"],
+                                       skipped=parsed["skipped"], path=path))
             if route == "/api/delete":
                 data_dir = ctx.allow(body.get("data_dir", ""))
                 return self._json(cleanup.delete(data_dir,

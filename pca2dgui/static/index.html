@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>pca2d-gui</title>
+  <title>LBL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -11,13 +11,15 @@
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
+  <div id="backdrop" class="backdrop"></div>
+  <div class="backdrop-veil"></div>
   <div class="bg-orb orb-a"></div>
   <div class="bg-orb orb-b"></div>
 
   <div class="site-banner">
     <div class="site-banner-inner">
       <div class="site-banner-text">
-        <h2 data-t="title">pca2d-gui</h2>
+        <h2 data-t="title">LBL</h2>
         <p data-t="tagline"></p>
       </div>
       <button id="lang" class="home-link pill-button" type="button">FR</button>
@@ -53,7 +55,8 @@
 
     <nav class="span-3 tabs" id="tabs">
       <button type="button" data-tab="targets" data-t="tab_targets"></button>
-      <button type="button" data-tab="settings" data-t="tab_settings"></button>
+      <button type="button" data-tab="lbl" data-t="tab_lbl"></button>
+      <button type="button" data-tab="pca2d" data-t="tab_pca2d"></button>
       <button type="button" data-tab="run" data-t="tab_run"></button>
       <button type="button" data-tab="runs" data-t="tab_runs"></button>
       <button type="button" data-tab="cleanup" data-t="tab_cleanup"></button>
@@ -101,31 +104,41 @@
       </div>
     </section>
 
-    <!-- SETTINGS -->
-    <section class="pane span-3" id="pane-settings" hidden>
+    <!-- LBL SETTINGS -->
+    <section class="pane span-3" id="pane-lbl" hidden>
       <div class="pane-grid">
         <div class="card span-2">
-          <div class="row spread">
-            <h2 data-t="pca2d_on"></h2>
-            <label class="switch"><input type="checkbox" id="pca2d_on"><span class="hint small" data-t="pca2d_on_hint"></span></label>
-          </div>
-          <div id="options"></div>
+          <h2 data-t="per_target"></h2>
+          <div class="table-wrap"><table class="data" id="per_target"></table></div>
+          <p class="hint small" data-t="comparison_hint"></p>
         </div>
-        <div class="stack">
-          <div class="card">
-            <h2 data-t="per_target"></h2>
-            <div class="table-wrap"><table class="data" id="per_target"></table></div>
-            <p class="hint small" data-t="comparison_hint"></p>
+        <div class="card">
+          <h2 data-t="lbl_steps"></h2>
+          <div id="switches" class="switches"></div>
+          <label class="check"><input type="checkbox" id="resproj"> <span data-t="resproj"></span></label>
+          <div id="extra_box" class="extra" hidden>
+            <div class="group-title" data-t="extra_title"></div>
+            <pre id="extra" class="codeblock small"></pre>
+            <p class="hint small" data-t="extra_hint"></p>
           </div>
-          <div class="card">
-            <h2 data-t="lbl_steps"></h2>
-            <div id="switches" class="switches"></div>
-            <label class="field">
-              <span class="label" data-t="skip_pca2d"></span>
-              <select id="skip_pca2d"></select>
-            </label>
-            <label class="check"><input type="checkbox" id="resproj"> <span data-t="resproj"></span></label>
-          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PCA2D SETTINGS -->
+    <section class="pane span-3" id="pane-pca2d" hidden>
+      <div class="card">
+        <div class="row spread">
+          <h2 data-t="pca2d_on"></h2>
+          <span class="row gap">
+            <label class="field inline"><span data-t="skip_pca2d"></span><select id="skip_pca2d"></select></label>
+            <label class="switch"><input type="checkbox" id="pca2d_on"><span class="hint small" data-t="pca2d_on_hint"></span></label>
+          </span>
+        </div>
+        <div id="options"></div>
+        <div id="pca2d_extra_box" hidden>
+          <div class="group-title" data-t="extra_title"></div>
+          <pre id="pca2d_extra" class="codeblock small"></pre>
         </div>
       </div>
     </section>
@@ -144,11 +157,21 @@
           <div id="messages"></div>
           <textarea id="wrap_text" class="codeblock wrap-text" spellcheck="false"></textarea>
           <p class="hint small" data-t="wrap_hint"></p>
-          <div class="row gap">
+          <div class="row gap wrap">
             <button type="button" class="button" id="check" data-t="check"></button>
             <button type="button" class="button primary" id="queue" data-t="queue"></button>
             <button type="button" class="button" id="save_wrap" data-t="save_wrap"></button>
             <span class="hint small" id="save_status"></span>
+          </div>
+          <div class="load">
+            <div class="group-title" data-t="load_title"></div>
+            <div class="row gap">
+              <select id="wrap_list"></select>
+              <input id="wrap_path" type="text" class="mono small" spellcheck="false">
+              <button type="button" class="button" id="load_wrap" data-t="load"></button>
+            </div>
+            <p class="hint small" data-t="load_hint"></p>
+            <div id="load_messages"></div>
           </div>
         </div>
         <div class="card">
@@ -203,7 +226,7 @@
   </main>
 
   <footer class="footer">
-    <p>pca2d-gui <span id="version" class="mono"></span> &middot; LBL <span id="lbl_home" class="mono"></span> &middot;
+    <p>lbl-gui <span id="version" class="mono"></span> &middot; LBL <span id="lbl_home" class="mono"></span> &middot;
       <a href="https://eartigau.github.io/" target="_blank">More tools</a></p>
   </footer>
 

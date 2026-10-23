@@ -1,8 +1,8 @@
-# pca2d-gui
+# lbl-gui
 
-A browser window for running [LBL](https://github.com/njcuk9999/lbl) with
-the PCA2D precleaning (LBL's `lbl-pca2d` branch): pick the targets of a data
-folder, set the options, run, and follow the run as it goes.
+A browser window for running [LBL](https://github.com/njcuk9999/lbl), with or
+without the PCA2D precleaning (LBL's `lbl-pca2d` branch): pick the targets of
+a data folder, set LBL and PCA2D, run, and follow the run as it goes.
 
 The window does not compute anything itself. It writes an ordinary LBL wrap
 (`wrap.py`, which also runs by hand as it is) for the targets and options
@@ -17,8 +17,9 @@ shows up in the window without a change here.
 | screen | what it does |
 |---|---|
 | Targets | the folders of `DATA_DIR/science/`, read from their headers (spectra, nights, SNR, BERV range, dates, Teff), with the BERV coverage, SNR against BERV and the dates of the ticked ones |
-| Settings | the PCA2D options (the fit, the observer bases, the correction), the template of each target (its own or another star's), and LBL's steps |
-| Run | the wrap as it will run (it can be edited), the queue, and the live log of a run |
+| LBL settings | the template of each target (its own or another star's), its temperature, and LBL's steps |
+| PCA2D settings | the precleaning on or off, and its options: the fit, the observer bases (a frozen one, or saving this fit's), the correction |
+| Run | the wrap as it will run with what is ticked upstream (it can be edited and saved), loading a wrap, the queue, and the live log of a run |
 | Runs | the runs of the window, the PCA2D fits on disk and LBL's reports, read back from the data folder |
 | Cleanup | what the products weigh, by what deleting them costs; only what can be made again can be deleted, and nothing while a run works in the folder |
 
@@ -30,9 +31,20 @@ page (`pca2dgui/static/`):
 | `lblinfo.py` | what the window reads from LBL |
 | `targets.py` | the header scan, kept in `~/.lbl_pca2d_gui/scans/` |
 | `wrapgen.py` | from the window's state to the run parameters, checked, and the wrap |
+| `wrapload.py` | a wrap read back into the window (parsed, never run) |
+| `backdrop.py` | the background: a mosaic of the data folder's own LBL results |
 | `runner.py` | the queue, the runs and their logs |
 | `history.py`, `cleanup.py` | the Runs and Cleanup screens |
 | `i18n.py` | the words, in English and French |
+
+A wrap can be loaded (Run): it is parsed, never executed, its literal
+values fill the tabs, and whatever the window does not lay out (INPUT_FILE,
+a PCA2D `section.key`...) is kept and written back into every wrap made from
+it, so that a wrap loaded and saved again loses nothing.
+
+The background is drawn from the data folder itself: its velocity curves,
+periodograms, indicators, a template and one exposure's per-line
+velocities, blurred behind the cards (cached in `~/.lbl_pca2d_gui/`).
 
 Each run leaves `DATA_DIR/gui/runs/<run>/`: its `wrap.py`, its log
 (`run.log`), and `run.json` (what ran, when, how it ended, the reports it
@@ -57,9 +69,11 @@ It needs nothing LBL does not already need (numpy, astropy, pyyaml).
 ## Use
 
 ```
-pca2d-gui                                # opens the window in the browser
-pca2d-gui --data-dir ~/lbl-pca2d-demo    # on this data folder
-pca2d-gui --port 8800 --no-browser       # another port, no browser
+lbl-gui                                  # opens the window in the browser
+lbl-gui --data-dir ~/lbl-pca2d-demo      # on this data folder
+lbl-gui --port 8800 --no-browser         # another port, no browser
+
+(`pca2d-gui` is the same command, under its first name.)
 ```
 
 The window listens on the local machine only (`127.0.0.1`) and serves files

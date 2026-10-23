@@ -4,8 +4,8 @@ and the wrap.py that runs them.
 The wrap is the record of a run and the run itself: it is written to disk
 before anything starts, runs by hand as it is, and holds nothing the window
 alone could read. The PCA2D options a run leaves at their defaults are left
-out of it, except n_star and n_earth, so that a wrap says what was chosen and
-the rest is LBL's nominal of the day.
+out of it (n_star and n_earth are written whenever they were chosen), so that
+a wrap says what was chosen and the rest is LBL's nominal of the day.
 """
 from __future__ import annotations
 
@@ -15,7 +15,10 @@ import sys
 
 from . import lblinfo
 
-#: the PCA2D options a wrap always writes, defaults or not
+#: the PCA2D options a wrap writes whenever they are chosen, even at their
+#:    default (the rest only when they differ from it); one left unchosen is
+#:    not written, since its default may not be what a run uses (n_earth is
+#:    the frozen basis's own count when input_name names one)
 ALWAYS = ("n_star", "n_earth")
 #: the temperature handed to LBL when the headers give none [K]
 TEFF_FALLBACK = 3500
@@ -101,6 +104,12 @@ def build(state: dict) -> dict:
     if state.get("resproj"):
         rparams["RESPROJ_TABLES"] = {
             "DTEMP3500": "temperature_gradient_3500.fits"}
+    # what a loaded wrap held that the window does not: written back as it
+    #   was (wrapload.to_state)
+    from .wrapload import MANAGED
+    for key, value in (state.get("extra") or {}).items():
+        if key not in MANAGED and key not in rparams:
+            rparams[key] = value
     # PCA2D
     if state.get("pca2d_on", True):
         options = {row["key"]: row for row in
@@ -119,12 +128,12 @@ def build(state: dict) -> dict:
             if key in ALWAYS or value != row["default"]:
                 if value is not None or row["default"] is not None:
                     pca2d[key] = value
-        for key in ALWAYS:
-            pca2d.setdefault(key, options.get(key, {}).get("default"))
         for key in ("min_rjd", "max_rjd"):
             value = state.get(key)
             if value not in (None, ""):
                 pca2d[key] = float(value)
+        for key, value in (state.get("pca2d_extra") or {}).items():
+            pca2d.setdefault(key, value)
         if pca2d.get("joint") and len(targets) < 2:
             warnings.append("a joint fit needs two targets or more: left out")
             pca2d.pop("joint")
@@ -161,7 +170,8 @@ def render(rparams: dict, name: str = "", python: str = "") -> str:
         "#!%s" % python,
         "# -*- coding: utf-8 -*-",
         '"""',
-        "%s: LBL%s on %s (%s, %s), written by pca2d-gui on %s."
+        "%s: LBL%s on %s (%s, %s), written by the LBL window (lbl-gui)"
+        " on %s."
         % (name or "run", " with the PCA2D precleaning"
            if "PCA2D" in rparams else "", targets,
            rparams.get("INSTRUMENT"), rparams.get("DATA_SOURCE"), when),

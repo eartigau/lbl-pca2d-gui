@@ -76,7 +76,7 @@ def test_a_wrap_says_what_was_chosen_and_runs(data_dir):
     rparams = built["rparams"]
     assert rparams["OBJECT_SCIENCE"] == ["STAR"]
     assert rparams["OBJECT_COMPARISON"] == ["STAR"]
-    assert rparams["PCA2D"] == dict(n_star=1, n_earth=5)
+    assert rparams["PCA2D"] == dict(n_earth=5)
     text = wrapgen.render(rparams, "test")
     compile(text, "wrap.py", "exec")
     assert "lbl_wrap.main(rparams)" in text
@@ -151,3 +151,38 @@ def test_nothing_is_deleted_while_a_run_works_in_the_folder(data_dir):
         assert cache.exists()
     finally:
         proc.kill()
+
+
+def test_a_wrap_loaded_and_written_again_keeps_what_it_said(data_dir, tmp_path):
+    from pca2dgui import wrapload
+    wrap = tmp_path / "wrap_x.py"
+    wrap.write_text(
+        "from lbl.recipes import lbl_wrap\n"
+        "STARS = ['STAR']\n"
+        "if __name__ == '__main__':\n"
+        "    rparams = dict()\n"
+        "    rparams['INSTRUMENT'] = 'NIRPS_HE'\n"
+        "    rparams['DATA_SOURCE'] = 'CADC'\n"
+        "    rparams['DATA_DIR'] = %r\n"
+        "    rparams['DATA_TYPES'] = ['SCIENCE'] * len(STARS)\n"
+        "    rparams['OBJECT_SCIENCE'] = STARS\n"
+        "    rparams['OBJECT_COMPARISON'] = STARS\n"
+        "    rparams['OBJECT_TEFF'] = [3300]\n"
+        "    rparams['INPUT_FILE'] = '*t.fits'\n"
+        "    rparams['RUN_LBL_COMPUTE'] = True\n"
+        "    rparams['MASK_FILE'] = __file__.upper()\n"
+        "    rparams['PCA2D'] = dict(input_name='b', mask_share=0.5,\n"
+        "                            twoframe=dict(iters=4))\n"
+        "    lbl_wrap.main(rparams)\n" % str(data_dir))
+    parsed = wrapload.read(str(wrap))
+    assert parsed["skipped"] == ["MASK_FILE"]           # computed, not read
+    state = wrapload.to_state(parsed["rparams"])["state"]
+    assert state["ticked"] == ["STAR"] and state["comparison"] == {}
+    assert state["extra"] == {"INPUT_FILE": "*t.fits"}
+    assert state["pca2d"] == {"input_name": "b", "mask_share": 0.5}
+    assert state["pca2d_extra"] == {"twoframe": {"iters": 4}}
+    state["targets"] = state["ticked"]
+    rparams = wrapgen.build(state)["rparams"]
+    assert rparams["INPUT_FILE"] == "*t.fits"
+    assert rparams["PCA2D"] == {"input_name": "b", "mask_share": 0.5,
+                                "twoframe": {"iters": 4}}
