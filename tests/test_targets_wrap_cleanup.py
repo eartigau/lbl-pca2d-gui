@@ -210,6 +210,17 @@ def test_the_cleanup_deletes_only_what_can_be_remade(data_dir, tmp_path):
     assert (data_dir / "science" / "STAR").exists()
 
 
+def test_an_interpreter_is_not_a_run():
+    for command in ("/opt/env/bin/python3.12 /opt/env/bin/ipython",
+                    "/opt/env/bin/python", "python -i wrap.py",
+                    "/opt/env/bin/python -m ipykernel_launcher -f k.json"):
+        assert not cleanup.is_run(command), command
+    for command in ("/opt/env/bin/python -u /data/gui/runs/x/wrap.py",
+                    "python wrap_toi904_ext.py", "python -m lbl.recipes.lbl_compute",
+                    "/opt/env/bin/python weight_spectrum.py --cube c"):
+        assert cleanup.is_run(command), command
+
+
 def test_nothing_is_deleted_while_a_run_works_in_the_folder(data_dir):
     import subprocess
     import sys

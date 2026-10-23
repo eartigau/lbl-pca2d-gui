@@ -139,11 +139,36 @@ def busy(data_dir: str) -> list:
         except (OSError, subprocess.SubprocessError):
             command = ""
         # the multiprocessing helpers of a run are the run, and a window
-        #   is not one
+        #   is not one; nor is an interpreter someone works in
         if "resource_tracker" in command or "lbl-gui" in command:
+            continue
+        if not is_run(command):
             continue
         procs.append(dict(pid=pid, command=command[:200]))
     return procs
+
+
+#: interpreters a person works in: their current folder says where they
+#:    are, not that something is being computed there
+INTERACTIVE = ("ipython", "jupyter", "ipykernel", "bpython", "ptpython")
+
+
+def is_run(command: str) -> bool:
+    """Whether a Python process runs something (a script, a module, code
+    given with -c) rather than waits for someone (a bare python, ipython,
+    a Jupyter kernel). An ipython left in science/TOI1452 for hours stopped
+    every cleanup (2026-10-23)."""
+    words = str(command or "").split()
+    if not words:
+        return False
+    if any(any(name in os.path.basename(word) for name in INTERACTIVE)
+           for word in words[:3]):
+        return False
+    rest = words[1:]
+    if "-i" in rest:
+        return False
+    return any(word.endswith(".py") or word in ("-m", "-c")
+               for word in rest)
 
 
 def delete(data_dir: str, paths: list) -> list:
