@@ -1017,6 +1017,9 @@ function selectJob(id) {
   stream = new EventSource(`/api/stream?id=${encodeURIComponent(id)}&from=0`);
   const apply = (payload) => {
     const box = $('log');
+    // the log follows the run, unless one has scrolled up to read it: back
+    //   at the bottom, it follows again
+    const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
     payload.events.forEach((event) => {
       if (event.op === 'replace' && logLast) {
         logLast.textContent = event.text;
@@ -1028,7 +1031,7 @@ function selectJob(id) {
         while (box.childElementCount > LOG_LINES) box.firstElementChild.remove();
       }
     });
-    if ($('follow').checked) box.scrollTop = box.scrollHeight;
+    if (atBottom) box.scrollTop = box.scrollHeight;
   };
   stream.onmessage = (message) => apply(JSON.parse(message.data));
   stream.addEventListener('end', (message) => { apply(JSON.parse(message.data)); stream.close(); stream = null; pollQueue(); });
