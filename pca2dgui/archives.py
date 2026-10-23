@@ -4,6 +4,8 @@ knows where each instrument's LBL-readable spectra are:
 
     SPIROU    the CADC, APERO's t.fits (LBL's SPIROU CADC)
     NIRPS     ESO, the S2D with ESO's telluric model (NIRPS_HE/HA ESO)
+    HARPS     ESO, the e2ds of its DRS, the blaze of each night made from
+              the spectra (ESO does not give it; HARPS ORIG)
     HARPSN    the TNG, espdr's S2D_A (HARPSN ESO)
     SOPHIE    the OHP, e2ds and their blaze (SOPHIE)
     ESPRESSO  ESO, the S2D_A (ESPRESSO)
@@ -27,10 +29,11 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 #: the instruments asked, in the order the window shows them
-INSTRUMENTS = ("SPIROU", "NIRPS", "HARPSN", "SOPHIE", "ESPRESSO")
+INSTRUMENTS = ("SPIROU", "NIRPS", "HARPS", "HARPSN", "SOPHIE", "ESPRESSO")
 #: each instrument's archive and the product LBL reads, said shortly (koloa's
 #:    own description is an English sentence)
 ARCHIVE_NAMES = dict(SPIROU="CADC · APERO t.fits", NIRPS="ESO · S2D + tellu",
+                     HARPS="ESO · DRS e2ds",
                      HARPSN="TNG (IA2) · S2D_A", SOPHIE="OHP · e2ds",
                      ESPRESSO="ESO · S2D_A")
 #: what koloa keeps while it searches (the TNG's exposures of a star...)

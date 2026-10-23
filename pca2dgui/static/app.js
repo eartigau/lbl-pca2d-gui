@@ -228,7 +228,7 @@ function showSub(name) {
 }
 
 // ── the public archives (archives.py, through koloa) ────────────────────
-const ARCHIVE_INSTRUMENTS = [['SPIROU', 'SPIRou'], ['NIRPS', 'NIRPS'], ['HARPSN', 'HARPS-N'], ['SOPHIE', 'SOPHIE'], ['ESPRESSO', 'ESPRESSO']];
+const ARCHIVE_INSTRUMENTS = [['SPIROU', 'SPIRou'], ['NIRPS', 'NIRPS'], ['HARPS', 'HARPS'], ['HARPSN', 'HARPS-N'], ['SOPHIE', 'SOPHIE'], ['ESPRESSO', 'ESPRESSO']];
 const BIG_FETCH_MB = 5000;
 let ARCHIVE = null;
 let archiveChosen = new Set();
@@ -1338,6 +1338,15 @@ async function init() {
   $('runs_refresh').onclick = loadRuns;
   $('measure').onclick = measure;
   $('best_all').onclick = () => bestMatch(S.ticked);
+  // read the folder again: new or removed targets and spectra, and the
+  //   headers of the files that changed (the others are kept)
+  $('refresh_targets').onclick = async () => {
+    if (!S.data_dir) return;
+    await api.post('/api/scan', { data_dir: S.data_dir, again: true });
+    if (scanTimer) clearInterval(scanTimer);
+    scanTimer = setInterval(loadTargets, 1500);
+    await loadTargets();
+  };
   document.querySelectorAll('#target_subtabs button').forEach((b) => { b.onclick = () => showSub(b.dataset.sub); });
   $('archive_search').onclick = archiveSearch;
   $('archive_target').onkeydown = (event) => { if (event.key === 'Enter') archiveSearch(); };
