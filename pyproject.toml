@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lbl-pca2d-gui"
+version = "0.1.0"
+description = "A browser window to build, run and follow LBL wraps with the PCA2D precleaning"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Etienne Artigau" }]
+# LBL itself (the lbl-pca2d branch) is the engine and is not listed: the
+# window runs in the environment LBL is installed in, and reads LBL from
+# there. Everything else is the standard library and what LBL already needs.
+dependencies = ["numpy", "astropy", "pyyaml"]
+
+[project.scripts]
+pca2d-gui = "pca2dgui.app:main"
+
+[tool.setuptools]
+packages = ["pca2dgui"]
+
+[tool.setuptools.package-data]
+pca2dgui = ["static/*"]

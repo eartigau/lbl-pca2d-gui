@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pca2d-gui</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/theme.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+
+  <div class="site-banner">
+    <div class="site-banner-inner">
+      <div class="site-banner-text">
+        <h2 data-t="title">pca2d-gui</h2>
+        <p data-t="tagline"></p>
+      </div>
+      <button id="lang" class="home-link pill-button" type="button">FR</button>
+      <a href="https://eartigau.github.io/" class="home-link" target="_blank">&larr; <span data-t="home">Home</span></a>
+    </div>
+  </div>
+
+  <main class="layout">
+    <section class="card span-3" id="setup">
+      <div class="setup-grid">
+        <label class="field wide">
+          <span class="label" data-t="data_dir"></span>
+          <span class="row">
+            <input id="data_dir" type="text" spellcheck="false" autocomplete="off">
+            <button id="scan" type="button" class="button primary" data-t="scan"></button>
+          </span>
+          <span class="hint small" id="scan_status" data-t="data_dir_hint"></span>
+        </label>
+        <label class="field">
+          <span class="label" data-t="instrument"></span>
+          <select id="instrument"></select>
+        </label>
+        <label class="field">
+          <span class="label" data-t="source"></span>
+          <select id="source"></select>
+        </label>
+        <label class="field wide">
+          <span class="label" data-t="python"></span>
+          <input id="python" type="text" spellcheck="false" autocomplete="off" class="mono small">
+        </label>
+      </div>
+    </section>
+
+    <nav class="span-3 tabs" id="tabs">
+      <button type="button" data-tab="targets" data-t="tab_targets"></button>
+      <button type="button" data-tab="settings" data-t="tab_settings"></button>
+      <button type="button" data-tab="run" data-t="tab_run"></button>
+      <button type="button" data-tab="runs" data-t="tab_runs"></button>
+      <button type="button" data-tab="cleanup" data-t="tab_cleanup"></button>
+    </nav>
+
+    <!-- TARGETS -->
+    <section class="pane span-3" id="pane-targets">
+      <div class="pane-grid">
+        <div class="card span-2">
+          <div class="row spread">
+            <h2 data-t="tab_targets"></h2>
+            <span class="row gap">
+              <span class="hint small" id="ticked"></span>
+              <button type="button" class="button" id="tick_all" data-t="all"></button>
+              <button type="button" class="button" id="tick_none" data-t="none"></button>
+            </span>
+          </div>
+          <div id="instrument_filters" class="row gap wrap small"></div>
+          <div class="table-wrap tall">
+            <table class="data" id="targets_table"></table>
+          </div>
+          <p class="hint small warn-text" id="target_notes"></p>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h2 data-t="plot_berv"></h2>
+            <div id="plot_berv" class="plot"></div>
+            <p class="hint small" data-t="plot_berv_hint"></p>
+          </div>
+          <div class="card">
+            <h2 data-t="plot_snr"></h2>
+            <div id="plot_snr" class="plot"></div>
+            <p class="hint small" data-t="plot_snr_hint"></p>
+          </div>
+          <div class="card">
+            <h2 data-t="plot_time"></h2>
+            <div id="plot_time" class="plot"></div>
+            <div class="row gap small">
+              <label class="field inline"><span data-t="min_rjd"></span><input id="min_rjd" type="number" step="1" class="mono"></label>
+              <label class="field inline"><span data-t="max_rjd"></span><input id="max_rjd" type="number" step="1" class="mono"></label>
+            </div>
+            <p class="hint small" data-t="plot_time_hint"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="pane span-3" id="pane-settings" hidden>
+      <div class="pane-grid">
+        <div class="card span-2">
+          <div class="row spread">
+            <h2 data-t="pca2d_on"></h2>
+            <label class="switch"><input type="checkbox" id="pca2d_on"><span class="hint small" data-t="pca2d_on_hint"></span></label>
+          </div>
+          <div id="options"></div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h2 data-t="per_target"></h2>
+            <div class="table-wrap"><table class="data" id="per_target"></table></div>
+            <p class="hint small" data-t="comparison_hint"></p>
+          </div>
+          <div class="card">
+            <h2 data-t="lbl_steps"></h2>
+            <div id="switches" class="switches"></div>
+            <label class="field">
+              <span class="label" data-t="skip_pca2d"></span>
+              <select id="skip_pca2d"></select>
+            </label>
+            <label class="check"><input type="checkbox" id="resproj"> <span data-t="resproj"></span></label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RUN -->
+    <section class="pane span-3" id="pane-run" hidden>
+      <div class="pane-grid">
+        <div class="card span-2">
+          <div class="row spread">
+            <h2 data-t="wrap"></h2>
+            <span class="row gap">
+              <label class="field inline"><span data-t="run_name"></span><input id="run_name" type="text" class="mono" spellcheck="false"></label>
+              <button type="button" class="button" id="name_auto" data-t="run_name_auto"></button>
+            </span>
+          </div>
+          <div id="messages"></div>
+          <textarea id="wrap_text" class="codeblock wrap-text" spellcheck="false"></textarea>
+          <p class="hint small" data-t="wrap_hint"></p>
+          <div class="row gap">
+            <button type="button" class="button" id="check" data-t="check"></button>
+            <button type="button" class="button primary" id="queue" data-t="queue"></button>
+            <button type="button" class="button" id="save_wrap" data-t="save_wrap"></button>
+            <span class="hint small" id="save_status"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h2 data-t="queue_title"></h2>
+          <div id="queue_list"></div>
+        </div>
+        <div class="card span-3">
+          <div class="row spread">
+            <h2><span data-t="log"></span> <span class="mono small muted" id="log_title"></span></h2>
+            <span class="row gap">
+              <span class="badge" id="log_stage"></span>
+              <label class="check small"><input type="checkbox" id="follow" checked> <span data-t="follow"></span></label>
+              <button type="button" class="button danger" id="stop" data-t="stop"></button>
+            </span>
+          </div>
+          <div class="status-line mono small" id="log_status"></div>
+          <div id="log" class="log"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RUNS -->
+    <section class="pane span-3" id="pane-runs" hidden>
+      <div class="card">
+        <div class="row spread"><h2 data-t="runs_window"></h2><button type="button" class="button" id="runs_refresh" data-t="refresh"></button></div>
+        <div class="table-wrap"><table class="data" id="runs_window"></table></div>
+      </div>
+      <div class="card">
+        <h2 data-t="runs_pca2d"></h2>
+        <div class="table-wrap"><table class="data" id="runs_pca2d"></table></div>
+      </div>
+      <div class="card">
+        <h2 data-t="runs_reports"></h2>
+        <div class="table-wrap"><table class="data" id="runs_reports"></table></div>
+      </div>
+    </section>
+
+    <!-- CLEANUP -->
+    <section class="pane span-3" id="pane-cleanup" hidden>
+      <div class="card">
+        <div class="row spread">
+          <h2 data-t="tab_cleanup"></h2>
+          <span class="row gap">
+            <span class="hint small" id="cleanup_status"></span>
+            <button type="button" class="button" id="measure" data-t="measure"></button>
+            <button type="button" class="button danger" id="delete" data-t="delete_selected"></button>
+          </span>
+        </div>
+        <div id="cleanup"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>pca2d-gui <span id="version" class="mono"></span> &middot; LBL <span id="lbl_home" class="mono"></span> &middot;
+      <a href="https://eartigau.github.io/" target="_blank">More tools</a></p>
+  </footer>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card card">
+      <p id="modal_text"></p>
+      <div class="row gap end">
+        <button type="button" class="button" id="modal_no" data-t="no"></button>
+        <button type="button" class="button danger" id="modal_yes" data-t="yes"></button>
+      </div>
+    </div>
+  </div>
+  <div id="tooltip" class="tooltip" hidden></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
