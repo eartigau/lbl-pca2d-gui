@@ -20,7 +20,7 @@ shows up in the window without a change here.
 | LBL settings | the template of each target (its own or another star's), its temperature, and LBL's steps |
 | PCA2D settings | the precleaning on or off, and its options: the fit, the observer bases (a frozen one, or saving this fit's), the correction |
 | Run | the wrap as it will run with what is ticked upstream (it can be edited and saved), loading a wrap, the queue, and the live log of a run |
-| Runs | the runs of the window, the PCA2D fits on disk and LBL's reports, read back from the data folder |
+| Runs | the runs of the window and LBL's reports, read back from the data folder |
 | Cleanup | what the products weigh, by what deleting them costs; only what can be made again can be deleted, and nothing while a run works in the folder |
 
 The code is a small standard-library server (`pca2dgui/app.py`) and one

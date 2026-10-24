@@ -1213,14 +1213,6 @@ async function loadRuns() {
       el('td', { class: 'mono', text: run.started ? took(run.started, run.ended) : '' }),
       el('td', {}, (run.reports || []).map((p) => [fileLink(p, p.split('/').pop()), ' '])),
       el('td', {}, fileLink(run.log, 'run.log'), ' ', fileLink(run.wrap, 'wrap.py')))));
-  table($('runs_pca2d'), ['col_object', 'col_tag', 'col_hash', 'col_started', 'col_basis', 'col_report'],
-    (data.pca2d || []).map((run) => el('tr', {},
-      el('td', { text: run.object }),
-      el('td', { class: 'mono', text: run.tag }),
-      el('td', { class: 'mono', text: run.hash || '' }),
-      el('td', { class: 'mono', text: (run.started || '').slice(0, 16).replace('T', ' ') }),
-      el('td', { class: 'mono', text: run.basis || '' }),
-      el('td', {}, run.report ? fileLink(run.report, run.report.split('/').pop()) : ''))));
   table($('runs_reports'), ['col_name', 'col_date', 'col_size'],
     (data.reports || []).map((report) => el('tr', {},
       el('td', {}, fileLink(report.path, report.name)),

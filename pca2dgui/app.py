@@ -264,7 +264,6 @@ class Handler(BaseHTTPRequestHandler):
                 data_dir = ctx.allow(query.get("data_dir", ""))
                 return self._json(dict(
                     window=history.window_runs(data_dir),
-                    pca2d=history.pca2d_runs(data_dir),
                     reports=history.reports(data_dir)))
             if route == "/api/backdrop_status":
                 data_dir = ctx.allow(query.get("data_dir", ""))
