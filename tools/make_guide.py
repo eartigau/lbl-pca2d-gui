@@ -769,6 +769,10 @@ disk</em> ticked.</li>
 <li><strong>Memory.</strong> A target with many hundreds of exposures makes
 a large cube. Nightly stacking (on by default for NIRPS, automatic
 elsewhere) coadds each night; run one heavy target at a time.</li>
+<li><strong>SOPHIE's archive does not answer.</strong> The OHP's archive
+server (atlas.obs-hp.fr) has not answered since 2026-10-24: a SOPHIE search
+waits, then says so in the search's log. Stop the search to keep what the
+other archives found.</li>
 <li><strong>No LaTeX.</strong> Without <code>pdflatex</code> the reports are
 the figures bound together, with nothing missing but the typesetting.</li>
 <li><strong>The window shows nothing new after an update.</strong> Reload the
@@ -793,6 +797,10 @@ sur le disque</em> cochée.</li>
 un gros cube. L'empilement par nuit (actif par défaut pour NIRPS,
 automatique ailleurs) additionne chaque nuit ; lancez une cible lourde à la
 fois.</li>
+<li><strong>L'archive de SOPHIE ne répond pas.</strong> Le serveur
+d'archives de l'OHP (atlas.obs-hp.fr) ne répond plus depuis le 2026-10-24 :
+une recherche SOPHIE attend, puis le dit dans le journal de la recherche.
+Arrêtez la recherche pour garder ce que les autres archives ont trouvé.</li>
 <li><strong>Pas de LaTeX.</strong> Sans <code>pdflatex</code>, les rapports
 sont les figures assemblées, sans rien de moins que la mise en page.</li>
 <li><strong>La fenêtre ne montre rien de nouveau après une mise à

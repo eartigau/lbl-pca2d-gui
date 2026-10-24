@@ -507,6 +507,19 @@ lbl-gui --data-dir ~/lbl-data
                " <code>science/</code>, un fichier à la fois, sans jamais"
                " déplacer ni écraser un fichier. La cible apparaît ensuite"
                " dans <em>Mes cibles</em>."]),
+        callout("tip",
+                "<p>While a search goes, <em>Stop the search</em> takes the"
+                " place of <em>Search</em>: an archive that does not answer"
+                " no longer holds the others up. Under the results, <em>What"
+                " the search and the fetch are doing</em> says who was asked,"
+                " what each archive answered and in how long, and why a file"
+                " was not fetched.</p>",
+                "<p>Pendant une recherche, <em>Arrêter la recherche</em> prend"
+                " la place de <em>Chercher</em> : une archive qui ne répond"
+                " pas ne retient plus les autres. Sous les résultats, <em>Ce"
+                " que font la recherche et le téléchargement</em> dit qui a"
+                " été interrogé, ce que chaque archive a répondu et en combien"
+                " de temps, et pourquoi un fichier n'a pas été récupéré.</p>"),
     ]))
 
     out.append(step(12, ("Run again, differently", "Relancer, autrement"), [
