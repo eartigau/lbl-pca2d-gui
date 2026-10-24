@@ -356,8 +356,18 @@ function sourcesOf(instrument) {
 function fillSources() {
   const sources = sourcesOf(S.instrument);
   $('source').replaceChildren(...sources.map((row) => el('option', { value: row.source, text: row.source })));
-  if (!sources.find((row) => row.source === S.source)) S.source = sources.length ? sources[0].source : '';
+  if (!sources.find((row) => row.source === S.source)) {
+    // the source the ticked spectra's layout says, else the first
+    const said = tickedSource();
+    S.source = sources.find((row) => row.source === said) ? said : (sources.length ? sources[0].source : '');
+  }
   $('source').value = S.source;
+}
+/* the data source the ticked targets' files say by their layout
+   (targets.layout_source), when they all say the same */
+function tickedSource() {
+  const said = [...new Set(TARGETS.filter((row) => S.ticked.includes(row.name)).map((row) => row.source || null))];
+  return said.length === 1 ? said[0] : null;
 }
 function instrumentTelluclean() {
   const row = sourcesOf(S.instrument).find((r) => r.source === S.source);
@@ -509,18 +519,28 @@ function drawTiles() {
     const lasts = rows.map((row) => row.last).filter((x) => x !== null && x !== undefined);
     return firsts.length ? `${mjdDate(Math.min(...firsts))} → ${mjdDate(Math.max(...lasts))}` : '';
   };
+  // THE SELECTION ONLY: what is ticked, not the whole folder (which is said
+  //   in small when nothing is)
   const bervs = ticked.filter((row) => row.berv_min !== null && row.berv_min !== undefined);
   const lo = bervs.length ? Math.min(...bervs.map((row) => row.berv_min)) : null;
   const hi = bervs.length ? Math.max(...bervs.map((row) => row.berv_max)) : null;
-  const instruments = [...new Set(TARGETS.map((row) => row.instrument).filter(Boolean))].sort();
+  const instruments = [...new Set(ticked.map((row) => row.instrument).filter(Boolean))].sort();
+  // the nights and SNR of the ticked spectra themselves (POINTS), the
+  //   targets' own numbers until they are read
+  const mjds = ticked.flatMap((row) => ((POINTS[row.name] || {}).mjd || []).filter((m) => m !== null && m !== undefined));
+  const nights = mjds.length ? new Set(mjds.map((m) => Math.floor(m - 0.3))).size : sum(ticked, 'nights');
+  const snrs = ticked.flatMap((row) => ((POINTS[row.name] || {}).snr || []).filter((v) => v !== null && v !== undefined));
+  const median = (values) => { const v = [...values].sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : null; };
+  const snr = median(snrs.length ? snrs : ticked.map((row) => row.snr).filter((v) => v !== null && v !== undefined));
+  const none = !ticked.length;
   const tile = (label, value, sub) => el('div', { class: 'tile' },
     el('div', { class: 'label', text: label }),
     el('div', { class: 'value', text: value }),
     el('div', { class: 'sub', text: sub, title: sub }));
   $('tiles').replaceChildren(
-    tile(t('tile_targets'), count(TARGETS.length), instruments.join(' · ')),
-    tile(t('tile_spectra'), count(sum(TARGETS, 'files')), span(TARGETS)),
-    tile(t('tile_ticked'), count(ticked.length), ticked.length ? t('tile_ticked_sub', count(sum(ticked, 'files'))) : t('tile_none')),
+    tile(t('tile_targets'), count(ticked.length), none ? t('tile_folder', count(TARGETS.length), count(sum(TARGETS, 'files'))) : instruments.join(' · ')),
+    tile(t('tile_spectra'), none ? '-' : count(sum(ticked, 'files')), none ? t('tile_none') : span(ticked)),
+    tile(t('tile_nights'), none ? '-' : count(nights), none || snr === null ? t('tile_none') : t('tile_snr', fmt(snr, 0))),
     tile(t('tile_berv'), lo === null ? '-' : `${fmt(hi - lo)} km/s`, lo === null ? t('tile_none') : `${fmt(lo)} → ${fmt(hi)} km/s`));
 }
 
@@ -552,20 +572,30 @@ async function followTicked() {
     return;
   }
   const found = [...new Set(ticked.map((row) => guessInstrument(row.instrument)))];
-  if (found.length !== 1 || !found[0] || family(found[0]) === family(S.instrument)) return;
-  S.instrument = found[0];
-  S.instrument_set = true;
-  $('instrument').value = S.instrument;
-  fillSources();
+  if (found.length !== 1 || !found[0]) return;
+  const moved = family(found[0]) !== family(S.instrument);
+  if (moved) {
+    S.instrument = found[0];
+    S.instrument_set = true;
+    $('instrument').value = S.instrument;
+    fillSources();
+  }
+  // the data source too, as the files' layout says it (the CADC's t.fits
+  //   run as APERO stopped on the first one, 2026-10-24)
+  const said = tickedSource();
+  const resourced = Boolean(said) && said !== S.source && sourcesOf(S.instrument).some((row) => row.source === said);
+  if (resourced) { S.source = said; $('source').value = said; }
+  if (!moved && !resourced) return;
   save();
   await loadInstrumentThings();
-  $('target_notes').textContent = t('instrument_followed', S.instrument);
+  $('target_notes').textContent = t('instrument_followed', resourced ? `${S.instrument} · ${S.source}` : S.instrument);
 }
 
 async function loadPoints() {
   if (!S.ticked.length || !S.data_dir) { POINTS = {}; drawPlots(); return; }
   POINTS = await api.get('/api/points', { data_dir: S.data_dir, names: S.ticked.join(',') });
   drawPlots();
+  drawTiles();
 }
 
 // ── plots (SVG) ─────────────────────────────────────────────────────────

@@ -144,6 +144,18 @@ def build(state: dict) -> dict:
                        or origin.get("source") != str(source)):
             errors.append(say("err_archive_source", target, origin["lbl"],
                               origin["source"]))
+    # THE OTHERS: the data source their files' layout says
+    #   (targets.layout_source). The CADC's t.fits run as APERO stopped LBL
+    #   on the first one, WAVEORDN not in the header it reads (2026-10-24)
+    from .targets import layout_of
+    for target, origin in zip(targets, origins):
+        if origin:
+            continue
+        header, said = layout_of(data_dir, target)
+        if said and said != str(source) and said in sources \
+                and _family(header) == _family(instrument):
+            errors.append(say("err_layout_source", target, said, source,
+                              said))
     if found and not errors:
         rparams.setdefault("INPUT_FILE", found[0].get("input"))
         for key, value in (found[0].get("params") or {}).items():

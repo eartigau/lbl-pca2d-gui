@@ -23,7 +23,7 @@ import numpy as np
 #: where the indexes are kept, one per data folder
 INDEX_HOME = os.path.expanduser("~/.lbl_pca2d_gui/scans")
 #: bumped when the shape of an index changes
-VERSION = 2
+VERSION = 3
 #: a folder made from another by LBL or PCA2D is not a target: the corrected
 #: (<object>_pca2d, <object>_pca2d_<name>) and the cleaned (<object>_tc)
 DERIVED = re.compile(r"(_pca2d(_.*)?|_tc(_.*)?)$")
@@ -53,6 +53,12 @@ VSYS_ESO_KEY = "HIERARCH ESO TEL TARG RADVEL"
 #: the night a spectrum belongs to: MJD shifted so that a night does not
 #: straddle midnight UTC anywhere it matters (Chile, Hawaii)
 NIGHT_SHIFT = -0.3
+#: the instruments whose LBL readers (DATA_SOURCE) differ by the LAYOUT of
+#:    their files: APERO's own t.fits hold the flux in the primary HDU, with
+#:    WAVEORDN in its header; the CADC's an empty primary and named
+#:    extensions (FluxAB for SPIRou, FluxA for NIRPS); ESO's S2D a SCIDATA
+#:    extension; the HARPS and HARPS-N DRS e2ds one image in the primary
+LAYOUT_EXTENSIONS = {"FLUXAB", "FLUXA", "FLUXB"}
 
 
 def _number(value):
@@ -95,15 +101,53 @@ def _instrument(headers) -> str:
     return "?"
 
 
+def layout_source(instrument: str, hdulist):
+    """The DATA_SOURCE a file's layout says (LAYOUT_EXTENSIONS), or None
+    where it does not tell."""
+    family = re.sub(r"[^A-Z0-9]", "", str(instrument or "").upper()
+                    .split("_")[0])
+    names = {str(hdu.name).upper() for hdu in hdulist}
+    primary = hdulist[0].header
+    if family in ("SPIROU", "NIRPS"):
+        if "SCIDATA" in names:
+            return "ESO"
+        if names & LAYOUT_EXTENSIONS:
+            return "CADC"
+        if primary.get("NAXIS", 0) and "WAVEORDN" in primary:
+            return "APERO"
+    elif family in ("HARPS", "HARPSN", "HARPN"):
+        if "SCIDATA" in names:
+            return "ESO"
+        if len(hdulist) == 1 and primary.get("NAXIS", 0) == 2:
+            return "ORIG"
+    return None
+
+
+def layout_of(data_dir: str, name: str):
+    """(INSTRUME, DATA_SOURCE its layout says) of a target folder's first
+    spectrum; (None, None) if it has none or it cannot be read."""
+    from astropy.io import fits
+    paths = files_of(data_dir, name)
+    if not paths:
+        return None, None
+    try:
+        with fits.open(paths[0], memmap=True) as hdulist:
+            instrument = _instrument([hdu.header for hdu in hdulist])
+            return instrument, layout_source(instrument, hdulist)
+    except Exception:                                     # noqa: BLE001
+        return None, None
+
+
 def read_file(path: str) -> dict:
     """One spectrum's numbers, from its headers: instrument, object, SNR,
-    BERV [km/s], MJD of mid-exposure, exposure time [s]. None where a header
-    does not say."""
+    BERV [km/s], MJD of mid-exposure, exposure time [s], and the data
+    source its layout says. None where a header does not say."""
     from astropy.io import fits
     out = dict(instrument="?", object=None, snr=None, berv=None, mjd=None,
-               exptime=None, teff=None, vsys=None)
+               exptime=None, teff=None, vsys=None, source=None)
     with fits.open(path, memmap=True) as hdulist:
         headers = [hdu.header for hdu in hdulist]
+        out["source"] = layout_source(_instrument(headers), hdulist)
     out["instrument"] = _instrument(headers)
     if out["instrument"] == "ESPADONS":
         return _espadons(headers[0], out)
@@ -314,12 +358,14 @@ def summary(records: dict) -> dict:
                                  values("mjd"), values("exptime"),
                                  values("teff"))
     instruments = sorted({r.get("instrument", "?") for r in rows})
+    sources = sorted({r["source"] for r in rows if r.get("source")})
     objects = sorted({r.get("object") for r in rows if r.get("object")})
     nights = (len(np.unique(np.floor(mjd + NIGHT_SHIFT))) if mjd.size
               else 0)
     return dict(
         files=len(records), unreadable=len(records) - len(rows),
         instrument="/".join(instruments) if instruments else "?",
+        source="/".join(sources) if sources else None,
         object=objects[0] if objects else None,
         snr=float(np.median(snr)) if snr.size else None,
         teff=float(np.median(teff)) if teff.size else None,
