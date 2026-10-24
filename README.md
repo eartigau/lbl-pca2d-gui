@@ -32,7 +32,6 @@ page (`pca2dgui/static/`):
 | `targets.py` | the header scan, kept in `~/.lbl_pca2d_gui/scans/` |
 | `wrapgen.py` | from the window's state to the run parameters, checked, and the wrap |
 | `wrapload.py` | a wrap read back into the window (parsed, never run) |
-| `backdrop.py` | the background: a mosaic of the data folder's own LBL results |
 | `runner.py` | the queue, the runs and their logs |
 | `history.py`, `cleanup.py` | the Runs and Cleanup screens |
 | `i18n.py` | the words, in English and French |
@@ -42,10 +41,13 @@ values fill the tabs, and whatever the window does not lay out (INPUT_FILE,
 a PCA2D `section.key`...) is kept and written back into every wrap made from
 it, so that a wrap loaded and saved again loses nothing.
 
-The background is drawn from the data folder itself: its velocity curves,
-periodograms, indicators, a template and one exposure's per-line
-velocities, blurred behind the cards (cached in `~/.lbl_pca2d_gui/`, the
-last few only).
+The References tab lists the paper that describes LBL, with its BibTeX,
+and the papers whose velocities LBL measured, each with the sentence of the
+paper that says so: every paper citing LBL was read for it
+(`tools/lbl_references.yaml`, made into `static/references.json` by
+`tools/lbl_references.py`). The background is a mosaic of blurred figures
+from those of them under a Creative Commons licence
+(`tools/paper_backdrop.py`), credited in the same tab.
 
 The window is light by default, with a dark theme a click away in the
 banner; both use the shared fonts and banner of eartigau's tools, and each

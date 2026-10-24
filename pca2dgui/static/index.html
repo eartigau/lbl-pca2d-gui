@@ -61,6 +61,7 @@
       <button type="button" data-tab="run"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z"/></svg><span data-t="tab_run"></span></button>
       <button type="button" data-tab="runs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg><span data-t="tab_runs"></span></button>
       <button type="button" data-tab="cleanup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span data-t="tab_cleanup"></span></button>
+      <button type="button" data-tab="refs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5h6a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H4zM20 4.5h-6a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H20z"/></svg><span data-t="tab_refs"></span></button>
     </nav>
 
     <!-- TARGETS -->
@@ -285,6 +286,34 @@
           </span>
         </div>
         <div id="cleanup"></div>
+      </div>
+    </section>
+
+    <!-- REFERENCES: the method, and the papers whose velocities LBL measured
+         (static/references.json, made by tools/lbl_references.py) -->
+    <section class="pane span-3" id="pane-refs" hidden>
+      <div class="card">
+        <h2 data-t="refs_method"></h2>
+        <p class="hint" data-t="refs_method_hint"></p>
+        <div id="refs_method"></div>
+        <div class="row spread refs-bib-head">
+          <span class="small muted">BibTeX</span>
+          <button type="button" class="button" id="refs_copy" data-t="refs_copy"></button>
+        </div>
+        <pre class="refs-bibtex" id="refs_bibtex"></pre>
+      </div>
+      <div class="card">
+        <div class="row spread">
+          <h2 id="refs_title"></h2>
+          <input type="text" id="refs_filter" class="refs-filter" data-t-placeholder="refs_filter">
+        </div>
+        <p class="hint" id="refs_hint"></p>
+        <div id="refs_list"></div>
+      </div>
+      <div class="card">
+        <h2 data-t="refs_backdrop"></h2>
+        <p class="hint" data-t="refs_backdrop_hint"></p>
+        <ul class="refs-credits" id="refs_credits"></ul>
       </div>
     </section>
   </main>

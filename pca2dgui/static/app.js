@@ -173,6 +173,7 @@ async function loadStrings() {
   document.documentElement.lang = S.lang;
   document.querySelectorAll('[data-t]').forEach((node) => { node.textContent = t(node.dataset.t); });
   document.querySelectorAll('[data-t-title]').forEach((node) => { node.title = t(node.dataset.tTitle); node.setAttribute('aria-label', node.title); });
+  document.querySelectorAll('[data-t-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.tPlaceholder); });
   document.querySelectorAll('[data-help]').forEach((node) => { node.textContent = 'i'; node.dataset.tip = helpHtml(t(`help_${node.dataset.help}`)); });
   $('lang').textContent = T.lang_switch;
   applyTheme();
@@ -214,7 +215,75 @@ function showTab(name) {
   if (name === 'runs') loadRuns();
   if (name === 'cleanup') measure();
   if (name === 'targets') drawPlots();
+  if (name === 'refs') loadRefs();
   save();
+}
+
+// ── references ──────────────────────────────────────────────────────────
+// the method's paper and those whose velocities LBL measured, each with the
+//   sentence of the paper that says so (static/references.json)
+let REFS = null;
+async function loadRefs() {
+  if (!REFS) {
+    try {
+      REFS = await (await fetch('/static/references.json')).json();
+    } catch (error) {
+      REFS = { method: null, papers: [], credits: [] };
+    }
+  }
+  drawRefs();
+}
+function refLinks(ref) {
+  const links = [];
+  if (ref.doi) links.push(el('a', { href: `https://doi.org/${ref.doi}`, target: '_blank', rel: 'noopener', text: 'DOI' }));
+  if (ref.arxiv) links.push(el('a', { href: `https://arxiv.org/abs/${ref.arxiv}`, target: '_blank', rel: 'noopener', text: 'arXiv' }));
+  return links;
+}
+function refItem(ref, withWhy) {
+  const where = [ref.journal, ref.volume, ref.page].filter(Boolean).join(', ');
+  return el('div', { class: 'ref' },
+    // the instruments its LBL sentences name are searched, not shown: a
+    //   sentence can name one LBL did not measure
+    el('div', { class: 'ref-head' },
+      el('span', { class: 'ref-authors', text: `${ref.authors} (${ref.year})` }),
+      ref.role ? el('span', { class: 'chip ref-role', text: t(`refs_role_${ref.role}`) }) : null),
+    el('div', { class: 'ref-title', text: ref.title }),
+    el('div', { class: 'ref-meta small' }, el('span', { class: 'muted', text: where }), ...refLinks(ref)),
+    withWhy && ref.evidence ? el('details', { class: 'ref-why small' },
+      el('summary', { text: t('refs_why') }),
+      el('blockquote', { text: ref.evidence })) : null);
+}
+function drawRefs() {
+  if (!REFS) return;
+  $('refs_method').replaceChildren(REFS.method ? refItem(REFS.method, false) : el('span', { class: 'muted', text: '-' }));
+  $('refs_bibtex').textContent = REFS.bibtex || '';
+  const words = ($('refs_filter').value || '').toLowerCase().split(/\s+/).filter(Boolean);
+  const papers = (REFS.papers || []).filter((ref) => {
+    const text = [ref.authors, ref.title, ref.journal, ref.year, ...(ref.instruments || []), ref.evidence].join(' ').toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+  $('refs_title').textContent = t('refs_used', (REFS.papers || []).length);
+  $('refs_hint').textContent = t('refs_used_hint', REFS.updated || '-');
+  const years = [...new Set(papers.map((ref) => ref.year))].sort((a, b) => b - a);
+  $('refs_list').replaceChildren(...(papers.length ? years.map((year) => el('div', { class: 'ref-year' },
+    el('h3', { class: 'ref-year-title', text: String(year) }),
+    ...papers.filter((ref) => ref.year === year).map((ref) => refItem(ref, true))))
+    : [el('p', { class: 'muted', text: t('refs_none') })]));
+  $('refs_credits').replaceChildren(...(REFS.credits || []).map((c) => el('li', {},
+    el('span', { text: `${c.authors} (${c.year}), ` }), el('em', { text: c.title }), ' ',
+    el('span', { class: 'muted', text: `[${c.licence}] ` }), ...refLinks(c))));
+}
+async function copyBibtex() {
+  try {
+    await navigator.clipboard.writeText(REFS && REFS.bibtex ? REFS.bibtex : '');
+    $('refs_copy').textContent = t('refs_copied');
+    setTimeout(() => { $('refs_copy').textContent = t('refs_copy'); }, 1600);
+  } catch (error) {
+    const range = document.createRange();
+    range.selectNodeContents($('refs_bibtex'));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  }
 }
 
 // ── the targets' sub-tabs ───────────────────────────────────────────────
@@ -1328,29 +1397,21 @@ async function deleteSelected() {
 }
 
 // ── background ──────────────────────────────────────────────────────────
+// blurred figures of papers whose velocities LBL measured, one mosaic per
+//   theme (tools/paper_backdrop.py); the References tab credits them
 let backdropFor = null;
-async function setBackdrop() {
-  const wanted = `${S.data_dir}|${S.theme}`;
-  if (!S.data_dir || backdropFor === wanted) return;
-  backdropFor = wanted;
-  const folder = S.data_dir;
-  const theme = S.theme;
-  for (let i = 0; i < 60 && `${S.data_dir}|${S.theme}` === wanted; i += 1) {
-    const status = await api.get('/api/backdrop_status', { data_dir: folder, theme });
-    if (status.none) return;
-    if (status.ready) {
-      const url = `/api/backdrop?data_dir=${encodeURIComponent(folder)}&theme=${theme}&k=${status.key}`;
-      const image = new Image();
-      image.onload = () => {
-        if (`${S.data_dir}|${S.theme}` !== wanted) return;
-        $('backdrop').style.backgroundImage = `url("${url}")`;
-        $('backdrop').classList.add('ready');
-      };
-      image.src = url;
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
+function setBackdrop() {
+  const theme = S.theme === 'dark' ? 'dark' : 'light';
+  if (backdropFor === theme) return;
+  backdropFor = theme;
+  const url = `/static/backdrop_${theme}.jpg`;
+  const image = new Image();
+  image.onload = () => {
+    if (backdropFor !== theme) return;
+    $('backdrop').style.backgroundImage = `url("${url}")`;
+    $('backdrop').classList.add('ready');
+  };
+  image.src = url;
 }
 
 // ── start ───────────────────────────────────────────────────────────────
@@ -1399,6 +1460,8 @@ async function init() {
   $('queue').onclick = queue;
   $('save_wrap').onclick = () => saveWrap(false);
   $('stop').onclick = stopJob;
+  $('refs_copy').onclick = copyBibtex;
+  $('refs_filter').oninput = drawRefs;
   // to the top: the log stops following the run; to the bottom: it follows again
   $('log_top').onclick = () => { $('log').scrollTop = 0; };
   $('log_bottom').onclick = () => { const box = $('log'); box.scrollTop = box.scrollHeight; };

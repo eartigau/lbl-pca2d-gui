@@ -21,7 +21,7 @@ import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from . import __version__, backdrop, cleanup, history, i18n, lblinfo, runner
+from . import __version__, cleanup, history, i18n, lblinfo, runner
 from . import archives, targets
 from . import wrapgen, wrapload
 
@@ -265,19 +265,6 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(dict(
                     window=history.window_runs(data_dir),
                     reports=history.reports(data_dir)))
-            if route == "/api/backdrop_status":
-                data_dir = ctx.allow(query.get("data_dir", ""))
-                path, ready = backdrop.ensure(data_dir,
-                                              query.get("theme", ""))
-                return self._json(dict(ready=ready, none=path is None,
-                                       key=os.path.basename(path or "")))
-            if route == "/api/backdrop":
-                data_dir = ctx.allow(query.get("data_dir", ""))
-                path, ready = backdrop.path_of(data_dir,
-                                               query.get("theme", ""))
-                if not ready:
-                    return self.send_error(HTTPStatus.NOT_FOUND)
-                return self._file(path, "image/png")
             if route == "/api/wraps":
                 data_dir = ctx.allow(query.get("data_dir", ""))
                 return self._json(wrapload.wraps_in(data_dir))

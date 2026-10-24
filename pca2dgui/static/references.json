@@ -1,0 +1,928 @@
+{
+ "updated": "2026-10-24",
+ "method": {
+  "arxiv": "2207.13524",
+  "doi": "10.3847/1538-3881/ac7ce6",
+  "year": 2022,
+  "title": "Line-by-line Velocity Measurements: an Outlier-resistant Method for Precision Velocimetry",
+  "authors": "Artigau et al.",
+  "journal": "The Astronomical Journal",
+  "volume": "164",
+  "page": "84"
+ },
+ "bibtex": "@ARTICLE{Artigau2022,\n       author = {{Artigau}, Étienne and {Cadieux}, Charles and {Cook}, Neil J. and {Doyon}, René and {Vandal}, Thomas and {Donati}, Jean-François and {Moutou}, Claire and {Delfosse}, Xavier and {Fouqué}, Pascal and {Martioli}, Eder and {Bouchy}, François and {Parsons}, Jasmine and {Carmona}, Andres and {Dumusque}, Xavier and {Astudillo-Defru}, Nicola and {Bonfils}, Xavier and {Mignon}, Lucille},\n        title = \"{Line-by-line Velocity Measurements: an Outlier-resistant Method for Precision Velocimetry}\",\n      journal = {The Astronomical Journal},\n         year = 2022,\n       volume = {164},\n       number = {3},\n          eid = {84},\n          doi = {10.3847/1538-3881/ac7ce6},\narchivePrefix = {arXiv},\n       eprint = {2207.13524},\n}",
+ "papers": [
+  {
+   "arxiv": "2609.24870",
+   "doi": "10.1051/0004-6361/202661989",
+   "year": 2026,
+   "title": "Upside down: GJ 3090 b the first retrograde exoplanet around an M dwarf detected with NIRPS",
+   "authors": "Carteret et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "713",
+   "page": "L15",
+   "evidence": "We computed line-by-line RVs using the template-matching method of Artigau et al. (2022), implemented in the open-source LBL package.",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": null,
+   "doi": "10.1051/0004-6361/202557666",
+   "year": 2026,
+   "title": "SPIRou detects two planets around the nearby M4.5V star GJ 4274",
+   "authors": "Charpentier et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "705",
+   "page": "A243",
+   "evidence": "In this study, we employed a line-by-line framework to derive and analyze the RV signal of GJ 4274 acquired with SPIRou.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2602.24078",
+   "doi": "10.1051/0004-6361/202558694",
+   "year": 2026,
+   "title": "Monitoring the magnetospheric accretion of the classical T Tauri star DO Tau with SPIRou",
+   "authors": "Donati et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "708",
+   "page": "A230",
+   "evidence": "We applied the line-by-line (LBL) technique (v0.65; Artigau et al. 2022) to the reduced data, yielding RVs and differential temperatures dT.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2607.11674",
+   "doi": "10.1051/0004-6361/202661267",
+   "year": 2026,
+   "title": "Unstable magnetospheric accretion on the T Tauri star TW Hya",
+   "authors": "Donati et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "713",
+   "page": "A243",
+   "evidence": "We examined RVs derived by LBL, whose error bars based on photon noise range from 1.8 to 6.0 m/s (median 2.2 m/s).",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2603.00385",
+   "doi": "10.1093/mnras/stag438",
+   "year": 2026,
+   "title": "TOI-1080 b: a temperate, rocky planet orbiting a quiet M4V host",
+   "authors": "Gómez Maqueo Chew et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "548",
+   "page": "stag438",
+   "evidence": "The radial velocities were extracted with the line-by-line code (LBL, v0.65.012).",
+   "instruments": []
+  },
+  {
+   "arxiv": "2601.09330",
+   "doi": "10.1051/0004-6361/202556887",
+   "year": 2026,
+   "title": "NIRPS tightens the mass estimate of GJ 3090 b and detects a planet near the stellar rotation period",
+   "authors": "Lamontagne et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "706",
+   "page": "A278",
+   "evidence": "The observations were reduced with the data reduction software APERO v0.7.292, fully compatible with NIRPS, with RV extraction performed using the line-by-line method implemented in the open-source lbl package.",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": "2510.11523",
+   "doi": "10.1051/0004-6361/202556146",
+   "year": 2026,
+   "title": "Characterising planetary systems with SPIRou: Questions about the magnetic cycle of 55 Cnc A and two new planets around B",
+   "authors": "Moutou et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "705",
+   "page": "A190",
+   "evidence": "SPIRou spectra and associated calibrations have been reduced using the APERO pipeline and RVs were extracted with the line-by-line (LBL) method adapted to SPIRou.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2603.12345",
+   "doi": "10.1051/0004-6361/202558343",
+   "year": 2026,
+   "title": "Confirmation of the hot super-Neptune TOI-672 b with NIRPS and HARPS. Insights into the Neptunian desert around M dwarfs",
+   "authors": "Osborn et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "709",
+   "page": "A23",
+   "evidence": "We thus extract both NIRPS and HARPS RVs using LBL (version 0.65.006).",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": "2601.22815",
+   "doi": "10.1051/0004-6361/202555469",
+   "year": 2026,
+   "title": "The SPIRou Legacy Survey. Detection of a nearby world orbiting in the habitable zone of Gl 725B achieved by correcting strong telluric contamination in near-infrared radial velocities with wapiti",
+   "authors": "Ould-Elhkim et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "705",
+   "page": "A234",
+   "evidence": "The RVs were obtained using the Line-by-Line (LBL) method, version 0.65.003.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2601.22115",
+   "doi": "10.1051/0004-6361/202558308",
+   "year": 2026,
+   "title": "Densities of small planets around the M dwarfs TOI-4336 A and TOI-4342 with ESPRESSO. Three sub-Neptunes, one super-Earth, and a Neptune-mass candidate",
+   "authors": "Parc et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "708",
+   "page": "A81",
+   "evidence": "Radial velocities were extracted with both the cross-correlation method (CCF) and the line-by-line (LBL; version 0.65.003) method of Artigau et al. (2022). [...] At the end, we used the radial velocities from the LBL method for our analysis.",
+   "instruments": [
+    "NIRPS",
+    "ESPRESSO"
+   ]
+  },
+  {
+   "arxiv": "2607.13333",
+   "doi": "10.1051/0004-6361/202659984",
+   "year": 2026,
+   "title": "Revisiting TOI-4438 and TOI-442 planetary systems with new observations from SPIRou and TESS",
+   "authors": "Serrano Bell et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "713",
+   "page": "A166",
+   "evidence": "The SPIRou spectra were reduced with APERO v0.65, and RVs were derived with the line-by-line method (LBL; Artigau et al. 2022), which combines per-line velocities with outlier rejection and is effective against stellar, telluric, and instrumental systematics.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2603.18233",
+   "doi": "10.1051/0004-6361/202558749",
+   "year": 2026,
+   "title": "TOI-4552 b: A new ultra-short-period rocky world revealed by NIRPS and TESS",
+   "authors": "Srivastava et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "709",
+   "page": "A73",
+   "evidence": "The final RV extraction uses the line-by-line (LBL; v0.65.001) framework.",
+   "instruments": [
+    "NIRPS"
+   ]
+  },
+  {
+   "arxiv": "2604.07447",
+   "doi": "10.1051/0004-6361/202558011",
+   "year": 2026,
+   "title": "Super-Earth masses and stellar abundances from NIRPS reveal tentative evidence for water-rich formation around M dwarfs",
+   "authors": "Weisserman et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "709",
+   "page": "A165",
+   "evidence": "The RV extraction was performed using the line-by-line (LBL) method, using version 0.65.002 of the LBL package.",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": "2508.06626",
+   "doi": "10.1051/0004-6361/202553724",
+   "year": 2025,
+   "title": "Quantifying thermal water dissociation in the dayside photosphere of WASP-121 b using NIRPS",
+   "authors": "Bazinet et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "701",
+   "page": "A276",
+   "evidence": "The retrieval found a systemic velocity for the combined OH, Fe and Mg signal of 38.04 +/- 0.53 km/s, consistent with the systemic velocity retrieved by the Line-by-line technique using the NIRPS observations presented in this paper.",
+   "role": "systemic",
+   "instruments": [
+    "NIRPS"
+   ]
+  },
+  {
+   "arxiv": "2510.19956",
+   "doi": "10.3847/1538-3881/ae0e20",
+   "year": 2025,
+   "title": "Discovery of a Nearby Habitable Zone Super-Earth Candidate Amenable to Direct Imaging",
+   "authors": "Beard et al.",
+   "journal": "The Astronomical Journal",
+   "volume": "170",
+   "page": "279",
+   "evidence": "OE23 additionally cleaned the data of systematics using the line-by-line method (LBL) implemented with the WAPITI software package (OE23).",
+   "role": "reused",
+   "instruments": []
+  },
+  {
+   "arxiv": "2507.21767",
+   "doi": "10.1051/0004-6361/202453341",
+   "year": 2025,
+   "title": "NIRPS joining HARPS at ESO 3.6 m. On-sky performance and science objectives",
+   "authors": "Bouchy et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "700",
+   "page": "A10",
+   "evidence": "Radial velocity measurements in APERO are typically performed using the line-by-line (LBL) algorithm. [...] The resulting photon-noise RV accuracy aligns closely with LBL-determined RVs.",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": "2506.20561",
+   "doi": "10.3847/1538-3881/ae0f98",
+   "year": 2025,
+   "title": "An Earthlike Density for the Temperate Earth-sized Planet GJ 12 b",
+   "authors": "Brady et al.",
+   "journal": "The Astronomical Journal",
+   "volume": "170",
+   "page": "335",
+   "evidence": "The CCF RVs have a median error of 2.64 m/s and the LBL RVs have a lower median error of 1.14 m/s. We thus use the LBL-reduced RVs in our subsequent analysis.",
+   "instruments": []
+  },
+  {
+   "arxiv": "2506.07931",
+   "doi": "10.1038/s41550-025-02552-4",
+   "year": 2025,
+   "title": "A transiting giant planet in orbit around a 0.2-solar-mass host star",
+   "authors": "Bryant et al.",
+   "journal": "Nature Astronomy",
+   "volume": "9",
+   "page": "1031-1044",
+   "evidence": "We reduced the data using APERO and extracted RV values through the line-by-line (LBL) method from the telluric corrected spectra.",
+   "instruments": []
+  },
+  {
+   "arxiv": "2507.09343",
+   "doi": "10.3847/1538-3881/adef59",
+   "year": 2025,
+   "title": "Detailed Architecture of the L 98-59 System and Confirmation of a Fifth Planet in the Habitable Zone",
+   "authors": "Cadieux et al.",
+   "journal": "The Astronomical Journal",
+   "volume": "170",
+   "page": "154",
+   "evidence": "Here, we analyze 16 new TESS sectors and improve radial velocity (RV) precision of archival ESPRESSO and HARPS data using a line-by-line framework, enabling stellar activity detrending via a novel differential temperature indicator.",
+   "instruments": [
+    "SPIRou",
+    "NIRPS",
+    "HARPS",
+    "ESPRESSO",
+    "CARMENES"
+   ]
+  },
+  {
+   "arxiv": "2504.03572",
+   "doi": "10.1051/0004-6361/202452513",
+   "year": 2025,
+   "title": "Characterizing planetary systems with SPIRou: Detection of a sub-Neptune in a 6-day period orbit around the M dwarf Gl 410",
+   "authors": "Carmona et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "700",
+   "page": "A222",
+   "evidence": "We used the line-by-line (LBL) technique to measure the RVs with SPIRou and the template matching method with SOPHIE.",
+   "instruments": [
+    "SPIRou",
+    "SOPHIE"
+   ]
+  },
+  {
+   "arxiv": "2411.09506",
+   "doi": "10.1051/0004-6361/202451646",
+   "year": 2025,
+   "title": "GI 725A b: A potential super-Earth detected with SOPHIE and SPIRou in an M dwarf binary system at 3.5 pc",
+   "authors": "Cortés-Zuleta et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "693",
+   "page": "A164",
+   "evidence": "We obtained high-precision RVs using the line-by-line (LBL) method based on the framework proposed by Artigau et al. (2022) and optimized for SPIRou data [...].",
+   "instruments": [
+    "SPIRou",
+    "SOPHIE"
+   ]
+  },
+  {
+   "arxiv": null,
+   "doi": "10.3847/1538-3881/ada77a",
+   "year": 2025,
+   "title": "The Gl 229 System Revisited with the Line-by-line Framework: Planetary Signals Now Appear as Stellar Activity Ghosts",
+   "authors": "Deslières et al.",
+   "journal": "The Astronomical Journal",
+   "volume": "169",
+   "page": "182",
+   "evidence": "This work presents a new analysis of the publicly available Gl 229 High Accuracy Radial Velocity Planet Searcher data reduced with the line-by-line precision RV algorithm resistant to spectral outliers.",
+   "instruments": []
+  },
+  {
+   "arxiv": "2511.16609",
+   "doi": "10.1051/0004-6361/202557322",
+   "year": 2025,
+   "title": "Searching for close-in planets around TWA 7 with SPIRou",
+   "authors": "Donati et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "704",
+   "page": "A307",
+   "evidence": "We analyzed the APERO spectra with the line-by-line (LBL) technique (v0.65; Artigau et al. 2022), yielding accurate RVs and differential temperatures dT estimated from the variation of spectral lines with respect to their median profile.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2505.10564",
+   "doi": "10.1051/0004-6361/202554628",
+   "year": 2025,
+   "title": "Mass, gas, and Gauss around a T Tauri Star with SPIRou",
+   "authors": "Donati et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "698",
+   "page": "L14",
+   "evidence": "We finally applied the Line-By-Line analysis (LBL, Artigau et al. 2022) to derive RVs from all (i.e., ~25000) spectral features simultaneously (using the median spectrum of Gl 846 as reference).",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2507.01746",
+   "doi": "10.1051/0004-6361/202555371",
+   "year": 2025,
+   "title": "Six-year SPIRou monitoring of the young planet-host AU Mic",
+   "authors": "Donati et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "700",
+   "page": "A227",
+   "evidence": "The reduced spectra were then analysed by the line-by-line (LBL) technique (v0.65, Artigau et al. 2022), using the median APERO spectrum of AU Mic itself as the reference, to compute precise RVs for the 344 nightly-averaged observations.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2507.09461",
+   "doi": "10.3847/2041-8213/adef55",
+   "year": 2025,
+   "title": "A New Brown Dwarf Orbiting an M Star and an Investigation of the Eccentricity Distribution of Transiting Long-period Brown Dwarfs",
+   "authors": "Gan et al.",
+   "journal": "The Astrophysical Journal Letters",
+   "volume": "988",
+   "page": "L78",
+   "evidence": "We then measured the radial velocities from these telluric-corrected spectra through the line-by-line (LBL) method of Artigau et al. (2022), employing a high SNR template of Gliese 699 (M4V) observed with SPIRou instead of TOI-5575 to improve the precision.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2509.17911",
+   "doi": "10.1051/0004-6361/202554963",
+   "year": 2025,
+   "title": "Chromaticity of stellar activity in radial velocities. Anti-correlated families of lines on the M dwarf EV Lac with SPIRou and SOPHIE",
+   "authors": "Larue et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "701",
+   "page": "A216",
+   "evidence": "The spectra were reduced using the nominal APERO pipeline version 0.7.286, and the RVs were computed in the telluric corrected spectra with the LBL algorithm version 0.63.002 for precision RV measurements.",
+   "instruments": [
+    "SPIRou",
+    "SOPHIE"
+   ]
+  },
+  {
+   "arxiv": "2502.07086",
+   "doi": "10.1051/0004-6361/202347814",
+   "year": 2025,
+   "title": "The SPIRou Legacy Survey. Near-infrared and optical radial velocity analysis of Gl 480 and Gl 382 using SPIRou, HARPS and CARMENES spectrographs",
+   "authors": "Ould-Elhkim et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "696",
+   "page": "A152",
+   "evidence": "RVs are subsequently computed from the telluric-corrected spectra using the 0.63.007 version of the Line-By-Line (LBL) method.",
+   "instruments": [
+    "SPIRou",
+    "HARPS",
+    "CARMENES"
+   ]
+  },
+  {
+   "arxiv": "2510.14927",
+   "doi": "10.1051/0004-6361/202555684",
+   "year": 2025,
+   "title": "NIRPS and TESS reveal a peculiar system around the M dwarf TOI-756: A transiting sub-Neptune and a cold eccentric giant",
+   "authors": "Parc et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "702",
+   "page": "A138",
+   "evidence": "The RV extraction from the reduced data of HARPS and NIRPS was performed with both the cross-correlation method (CCF) and the LBL method of Artigau et al. (2022), available as an open-source package (v0.65.003; LBL).",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": "2503.08405",
+   "doi": "10.1051/0004-6361/202452630",
+   "year": 2025,
+   "title": "HADES RV Programme with HARPS-N at TNG. XVI. A super-Earth in the habitable zone of the GJ 3998 multi-planet system",
+   "authors": "Stefanov et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "695",
+   "page": "A62",
+   "evidence": "Then, we fed all raw spectra to the LBL method with automatic telluric cleaning and an effective-temperature estimate [...]. We moved forwards with LBL RVs and several curated activity indicators.",
+   "instruments": [
+    "HARPS-N"
+   ]
+  },
+  {
+   "arxiv": "2507.21751",
+   "doi": "10.1051/0004-6361/202553728",
+   "year": 2025,
+   "title": "Diving into the planetary system of Proxima with NIRPS. Breaking the metre per second barrier in the infrared",
+   "authors": "Suárez Mascareño et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "700",
+   "page": "A11",
+   "evidence": "We extracted all NIRPS, HARPS, and ESPRESSO, RVs using the Line-By-Line (LBL, version 0.65.001, lbl.exoplanets.ca) code.",
+   "instruments": [
+    "NIRPS",
+    "HARPS",
+    "ESPRESSO"
+   ]
+  },
+  {
+   "arxiv": "2308.01454",
+   "doi": "10.1051/0004-6361/202346999",
+   "year": 2024,
+   "title": "TOI-4860 b, a short-period giant planet transiting an M3.5 dwarf",
+   "authors": "Almenara et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "683",
+   "page": "A166",
+   "evidence": "The line-by-line (LBL) method of Artigau et al. (2022) was then applied to the telluric-corrected spectra of TOI-4860 to measure its RVs.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2310.15490",
+   "doi": "10.3847/2041-8213/ad1691",
+   "year": 2024,
+   "title": "New Mass and Radius Constraints on the LHS 1140 Planets: LHS 1140 b Is either a Temperate Mini-Neptune or a Water World",
+   "authors": "Cadieux et al.",
+   "journal": "The Astrophysical Journal Letters",
+   "volume": "960",
+   "page": "L3",
+   "evidence": "The RV extraction from the reduced data was performed with the line-by-line (LBL, version 0.52) method of Artigau et al. (2022) available as an open source package.",
+   "instruments": [
+    "HARPS",
+    "ESPRESSO"
+   ]
+  },
+  {
+   "arxiv": "2408.10629",
+   "doi": "10.1051/0004-6361/202450366",
+   "year": 2024,
+   "title": "The GAPS Programme at TNG. LIX. Characterisation study of the ∼300 Myr-old multi-planetary system orbiting the star BD+40 2790 (TOI-2076)",
+   "authors": "Damasso et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "690",
+   "page": "A235",
+   "evidence": "We applied the algorithm LBL to our HARPS-N spectra as a further test to evaluate the performances of a different RV extraction method [...]",
+   "role": "comparison",
+   "instruments": [
+    "HARPS-N",
+    "CARMENES"
+   ]
+  },
+  {
+   "arxiv": "2405.13118",
+   "doi": "10.1093/mnras/stae1152",
+   "year": 2024,
+   "title": "Gliese 12 b, a temperate Earth-sized planet at 12 parsecs discovered with\n                    TESS\n                    and\n                    CHEOPS",
+   "authors": "Dholakia et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "531",
+   "page": "1276-1293",
+   "evidence": "The second method used was the line-by-line (LBL) method. [...] The LBL method resulted in an average RV RMS of 2.69 m/s, which is similar to that of the CCF method, however the average RV precision significantly improved to 1.15 m/s.",
+   "instruments": []
+  },
+  {
+   "arxiv": "2405.04461",
+   "doi": "10.1093/mnras/stae1227",
+   "year": 2024,
+   "title": "SPIRou spectropolarimetry of the T Tauri star TW Hydrae: magnetic fields, accretion, and planets",
+   "authors": "Donati et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "531",
+   "page": "3256-3278",
+   "evidence": "The reduced spectra were first analyzed for Zeeman broadening, then for RVs with the line-by-line (LBL) technique (version 0.63, Artigau et al. 2022).",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2410.00569",
+   "doi": "10.1051/0004-6361/202451311",
+   "year": 2024,
+   "title": "A sub-Earth-mass planet orbiting Barnard’s star",
+   "authors": "González Hernández et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "690",
+   "page": "A79",
+   "evidence": "We verified that we were able to recover the planet using the DRS RVs and the LBL RVs, with semi-amplitude velocity k_p = 52 (+9/-7) and 55 (+7/-9) cm/s for DRS and LBL runs, respectively, thus all compatible with TM run within the error bars.",
+   "role": "comparison",
+   "instruments": [
+    "HARPS-N",
+    "HARPS",
+    "ESPRESSO",
+    "CARMENES"
+   ]
+  },
+  {
+   "arxiv": "2409.11083",
+   "doi": "10.1051/0004-6361/202452244",
+   "year": 2024,
+   "title": "Characterisation of TOI-406 as a showcase of the THIRSTEE program. A two-planet system straddling the M-dwarf density gap",
+   "authors": "Lacedelli et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "692",
+   "page": "A238",
+   "evidence": "The RVs were measured from the processed data using the line-by-line algorithm described in Artigau et al. (2022), which is publicly available (v0.69; LBL).",
+   "instruments": [
+    "NIRPS",
+    "HARPS"
+   ]
+  },
+  {
+   "arxiv": "2407.16461",
+   "doi": "10.1051/0004-6361/202450047",
+   "year": 2024,
+   "title": "Revisiting the dynamical masses of the transiting planets in the young AU Mic system: Potential AU Mic b inflation at ~20 Myr",
+   "authors": "Mallorquín et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "689",
+   "page": "A132",
+   "evidence": "Table of the RV datasets analysed in this work: SPIRou, 950-2350 nm, 179 RVs, pipeline LBL (Artigau et al. 2022).",
+   "instruments": []
+  },
+  {
+   "arxiv": "2409.03704",
+   "doi": "10.1051/0004-6361/202450334",
+   "year": 2024,
+   "title": "TOI-3568 b: A super-Neptune in the sub-Jovian desert",
+   "authors": "Martioli et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "690",
+   "page": "A312",
+   "evidence": "The flux spectra have been analyzed using the line-by-line (LBL) method of Artigau et al. (2022), wherein a high-S/N template spectrum of HD 189733 observed by SPIRou was used as a reference to obtain the RVs.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2406.10384",
+   "doi": "10.1051/0004-6361/202450466",
+   "year": 2024,
+   "title": "Characterising planetary systems with SPIRou: Temperate sub-Neptune exoplanet orbiting the nearby fully convective star GJ 1289 and a candidate around GJ 3378",
+   "authors": "Moutou et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "688",
+   "page": "A196",
+   "evidence": "The precision RV measurements are obtained from an extraction of the spectra with the SPIRou pipeline APERO followed by the line-by-line (LBL) analysis developed for SPIRou by Artigau et al. (2022).",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2307.05580",
+   "doi": "10.1051/0004-6361/202245832",
+   "year": 2023,
+   "title": "Homogeneous search for helium in the atmosphere of 11 gas giant exoplanets with SPIRou",
+   "authors": "Allart et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "677",
+   "page": "A164",
+   "evidence": "The spectra are moved to the stellar rest frame using the systemic velocity measured by the line-by-line (LBL) code.",
+   "role": "systemic",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2303.16712",
+   "doi": "10.1051/0004-6361/202245660",
+   "year": 2023,
+   "title": "Near-IR and optical radial velocities of the active M dwarf star Gl 388 (AD Leo) with SPIRou at CFHT and SOPHIE at OHP. A 2.23 day rotation period and no evidence for a corotating planet",
+   "authors": "Carmona et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "674",
+   "page": "A110",
+   "evidence": "Measurements of RVs were extracted from the spectra with a line-by-line (LBL) algorithm described in Artigau et al. (2022).",
+   "instruments": [
+    "SPIRou",
+    "SOPHIE"
+   ]
+  },
+  {
+   "arxiv": "2310.13496",
+   "doi": "10.1093/mnras/stad3450",
+   "year": 2023,
+   "title": "Masses, revised radii, and a third planet candidate in the ‘Inverted’ planetary system around TOI-1266",
+   "authors": "Cloutier et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "527",
+   "page": "5464-5483",
+   "evidence": "We performed our RV extraction using the novel line-by-line (LBL) method proposed by Artigau et al. (2022).",
+   "instruments": [
+    "HARPS-N"
+   ]
+  },
+  {
+   "arxiv": "2301.10614",
+   "doi": "10.1051/0004-6361/202245131",
+   "year": 2023,
+   "title": "Optical and near-infrared stellar activity characterization of the early M dwarf Gl 205 with SOPHIE and SPIRou",
+   "authors": "Cortés-Zuleta et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "673",
+   "page": "A14",
+   "evidence": "However, in this work, we made used of the RVs computed by the line-by-line (LBL) method based on the Artigau et al. (2022) framework and optimized for SPIRou data.",
+   "instruments": [
+    "SPIRou",
+    "SOPHIE"
+   ]
+  },
+  {
+   "arxiv": "2304.09642",
+   "doi": "10.1093/mnras/stad1193",
+   "year": 2023,
+   "title": "The magnetic field and multiple planets of the young dwarf AU Mic",
+   "authors": "Donati et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "525",
+   "page": "455-475",
+   "evidence": "The reduced spectra were then analysed by the line-by-line (LBL) technique (version 0.45, Artigau et al. 2022) to compute precise RVs for 185 of the 188 nightly-averaged observations collected on AU Mic.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2310.02613",
+   "doi": "10.1093/mnras/stad3012",
+   "year": 2023,
+   "title": "Monitoring the young planet host V1298 Tau with SPIRou: planetary system and evolving large-scale magnetic field",
+   "authors": "Finociety et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "526",
+   "page": "4627-4672",
+   "evidence": "Applying the line-by-line (LBL) method on each reduced spectrum yielded 174 accurate RV values, with a typical error bar of 14 m/s.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2307.07329",
+   "doi": "10.3847/1538-3881/acf56d",
+   "year": 2023,
+   "title": "A Massive Hot Jupiter Orbiting a Metal-rich Early M Star Discovered in the TESS Full-frame Images",
+   "authors": "Gan et al.",
+   "journal": "The Astronomical Journal",
+   "volume": "166",
+   "page": "165",
+   "evidence": "The radial velocity (RV) measurements were obtained from the telluric corrected spectra using the line-by-line (LBL) method of Artigau et al. (2022).",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2211.06205",
+   "doi": "10.1051/0004-6361/202245129",
+   "year": 2023,
+   "title": "A sub-Neptune planet around TOI-1695 discovered and characterized with SPIRou and TESS",
+   "authors": "Kiefer et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "670",
+   "page": "A136",
+   "evidence": "The RV were derived from the telluric corrected t.fits spectra using the line-by-line (LBL) algorithm.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2307.11569",
+   "doi": "10.1051/0004-6361/202346813",
+   "year": 2023,
+   "title": "Characterizing planetary systems with SPIRou: M-dwarf planet-search survey and the multiplanet systems GJ 876 and GJ 1148",
+   "authors": "Moutou et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "678",
+   "page": "A207",
+   "evidence": "From these spectra, we then used the line-by-line (LBL) method described in Artigau et al. (2022) to determine the RVs.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2305.02123",
+   "doi": "10.1051/0004-6361/202346472",
+   "year": 2023,
+   "title": "Wapiti: A data-driven approach to correct for systematics in RV data. Application to SPIRou data of the planet-hosting M dwarf GJ 251",
+   "authors": "Ould-Elhkim et al.",
+   "journal": "Astronomy & Astrophysics",
+   "volume": "675",
+   "page": "A187",
+   "evidence": "RVs of GJ 251 were obtained from the telluric-corrected spectra using the line-by-line (LBL) method described in the paper by Artigau et al. (2022).",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2208.06333",
+   "doi": "10.3847/1538-3881/ac7cea",
+   "year": 2022,
+   "title": "TOI-1452 b: SPIRou and TESS Reveal a Super-Earth in a Temperate Orbit Transiting an M4 Dwarf",
+   "authors": "Cadieux et al.",
+   "journal": "The Astronomical Journal",
+   "volume": "164",
+   "page": "96",
+   "evidence": "Radial velocity measurements were obtained from the telluric-corrected spectra using the novel line-by-line (LBL) method.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2211.01358",
+   "doi": "10.1088/1538-3873/ac9e74",
+   "year": 2022,
+   "title": "APERO: A PipelinE to Reduce Observations—Demonstration with SPIRou",
+   "authors": "Cook et al.",
+   "journal": "Publications of the Astronomical Society of the Pacific",
+   "volume": "134",
+   "page": "114509",
+   "evidence": "APERO enables precise stable radial velocity measurements on sky (via the LBL algorithm), good to at least ~2 m/s over the current 5-year lifetime of SPIRou.",
+   "instruments": [
+    "SPIRou"
+   ]
+  },
+  {
+   "arxiv": "2210.08078",
+   "doi": "10.1093/mnras/stac3024",
+   "year": 2022,
+   "title": "Revisiting radial velocity measurements of the K2-18 system with the line-by-line framework",
+   "authors": "Radica et al.",
+   "journal": "Monthly Notices of the Royal Astronomical Society",
+   "volume": "517",
+   "page": "5050-5062",
+   "evidence": "In this article, we apply the unique capabilites of the LBL method to archival HARPS and CARMENES RV data of the K2-18 system to attempt to rectify persistent anomalies in the literature.",
+   "instruments": [
+    "HARPS",
+    "CARMENES"
+   ]
+  }
+ ],
+ "credits": [
+  {
+   "authors": "Cadieux et al.",
+   "year": 2022,
+   "title": "TOI-1452 b: SPIRou and TESS Reveal a Super-Earth in a Temperate Orbit Transiting an M4 Dwarf",
+   "doi": "10.3847/1538-3881/ac7cea",
+   "arxiv": "2208.06333",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Artigau et al.",
+   "year": 2022,
+   "title": "Line-by-line Velocity Measurements: an Outlier-resistant Method for Precision Velocimetry",
+   "doi": "10.3847/1538-3881/ac7ce6",
+   "arxiv": "2207.13524",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Cook et al.",
+   "year": 2022,
+   "title": "APERO: A PipelinE to Reduce Observations—Demonstration with SPIRou",
+   "doi": "10.1088/1538-3873/ac9e74",
+   "arxiv": "2211.01358",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Cortés-Zuleta et al.",
+   "year": 2023,
+   "title": "Optical and near-infrared stellar activity characterization of the early M dwarf Gl 205 with SOPHIE and SPIRou",
+   "doi": "10.1051/0004-6361/202245131",
+   "arxiv": "2301.10614",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Gan et al.",
+   "year": 2023,
+   "title": "A Massive Hot Jupiter Orbiting a Metal-rich Early M Star Discovered in the TESS Full-frame Images",
+   "doi": "10.3847/1538-3881/acf56d",
+   "arxiv": "2307.07329",
+   "licence": "CC HTTP:  CREATIVECOMMONS.ORG PUBLICDOMAIN ZERO 1.0"
+  },
+  {
+   "authors": "Cadieux et al.",
+   "year": 2024,
+   "title": "New Mass and Radius Constraints on the LHS 1140 Planets: LHS 1140 b Is either a Temperate Mini-Neptune or a Water World",
+   "doi": "10.3847/2041-8213/ad1691",
+   "arxiv": "2310.15490",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Lacedelli et al.",
+   "year": 2024,
+   "title": "Characterisation of TOI-406 as a showcase of the THIRSTEE program. A two-planet system straddling the M-dwarf density gap",
+   "doi": "10.1051/0004-6361/202452244",
+   "arxiv": "2409.11083",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Almenara et al.",
+   "year": 2024,
+   "title": "TOI-4860 b, a short-period giant planet transiting an M3.5 dwarf",
+   "doi": "10.1051/0004-6361/202346999",
+   "arxiv": "2308.01454",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Cortés-Zuleta et al.",
+   "year": 2025,
+   "title": "GI 725A b: A potential super-Earth detected with SOPHIE and SPIRou in an M dwarf binary system at 3.5 pc",
+   "doi": "10.1051/0004-6361/202451646",
+   "arxiv": "2411.09506",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Cadieux et al.",
+   "year": 2025,
+   "title": "Detailed Architecture of the L 98-59 System and Confirmation of a Fifth Planet in the Habitable Zone",
+   "doi": "10.3847/1538-3881/adef59",
+   "arxiv": "2507.09343",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Parc et al.",
+   "year": 2025,
+   "title": "NIRPS and TESS reveal a peculiar system around the M dwarf TOI-756: A transiting sub-Neptune and a cold eccentric giant",
+   "doi": "10.1051/0004-6361/202555684",
+   "arxiv": "2510.14927",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Ould-Elhkim et al.",
+   "year": 2026,
+   "title": "The SPIRou Legacy Survey. Detection of a nearby world orbiting in the habitable zone of Gl 725B achieved by correcting strong telluric contamination in near-infrared radial velocities with wapiti",
+   "doi": "10.1051/0004-6361/202555469",
+   "arxiv": "2601.22815",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Ould-Elhkim et al.",
+   "year": 2025,
+   "title": "The SPIRou Legacy Survey. Near-infrared and optical radial velocity analysis of Gl 480 and Gl 382 using SPIRou, HARPS and CARMENES spectrographs",
+   "doi": "10.1051/0004-6361/202347814",
+   "arxiv": "2502.07086",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Brady et al.",
+   "year": 2025,
+   "title": "An Earthlike Density for the Temperate Earth-sized Planet GJ 12 b",
+   "doi": "10.3847/1538-3881/ae0f98",
+   "arxiv": "2506.20561",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Parc et al.",
+   "year": 2026,
+   "title": "Densities of small planets around the M dwarfs TOI-4336 A and TOI-4342 with ESPRESSO. Three sub-Neptunes, one super-Earth, and a Neptune-mass candidate",
+   "doi": "10.1051/0004-6361/202558308",
+   "arxiv": "2601.22115",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Lamontagne et al.",
+   "year": 2026,
+   "title": "NIRPS tightens the mass estimate of GJ 3090 b and detects a planet near the stellar rotation period",
+   "doi": "10.1051/0004-6361/202556887",
+   "arxiv": "2601.09330",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "authors": "Carteret et al.",
+   "year": 2026,
+   "title": "Upside down: GJ 3090 b the first retrograde exoplanet around an M dwarf detected with NIRPS",
+   "doi": "10.1051/0004-6361/202661989",
+   "arxiv": "2609.24870",
+   "licence": "CC BY 4.0"
+  }
+ ]
+}

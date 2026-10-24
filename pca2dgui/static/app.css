@@ -517,6 +517,32 @@ h2 .info { vertical-align: 3px; }
 .log .flash { animation: log-flash 2.4s ease-out; }
 @keyframes log-flash { 0%, 35% { background: rgba(98, 194, 255, 0.3); } 100% { background: transparent; } }
 .step.linked { cursor: pointer; }
+
+/* ── references ─────────────────────────────────────────────────────── */
+.refs-filter { max-width: 22em; }
+.refs-bib-head { margin-top: 14px; }
+.refs-bibtex {
+  background: var(--code-bg); color: var(--code-text);
+  border: 1px solid rgba(130, 180, 240, 0.25); border-radius: 12px;
+  padding: 10px 12px; margin: 6px 0 0; overflow-x: auto;
+  font-family: "IBM Plex Mono", monospace; font-size: 0.76rem; line-height: 1.45;
+}
+.ref-year-title { margin: 18px 0 6px; font-size: 0.95rem; color: var(--accent); }
+.ref { padding: 9px 0; border-top: 1px solid var(--line); }
+.ref-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ref-authors { font-weight: 600; }
+.ref-role { font-size: 0.7rem; padding: 1px 8px; }
+.ref-title { margin: 2px 0; }
+.ref-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+.ref-meta a { color: var(--accent); }
+.ref-why summary { cursor: pointer; color: var(--muted); margin-top: 3px; }
+.ref-why blockquote {
+  margin: 6px 0 2px; padding: 6px 10px; border-left: 3px solid var(--accent);
+  background: var(--accent-soft); border-radius: 0 8px 8px 0; font-style: italic;
+}
+.refs-credits { margin: 0; padding-left: 1.2em; font-size: 0.82rem; }
+.refs-credits li { margin: 3px 0; }
+.refs-credits a { color: var(--accent); margin-left: 6px; }
 .step.linked:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
 .log-jumps {
   position: absolute; top: 10px; bottom: 10px; right: 24px;
@@ -593,7 +619,7 @@ h2 .info { vertical-align: 3px; }
 .extra { margin-top: 12px; }
 #extra, #pca2d_extra { white-space: pre-wrap; }
 
-/* ── the background: the data folder's own results, blurred (backdrop.py) */
+/* ── the background: figures of papers that used LBL, blurred (tools/paper_backdrop.py) */
 .backdrop {
   position: fixed;
   inset: -60px;
