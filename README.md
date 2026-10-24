@@ -67,7 +67,7 @@ wraps:
 
 ```
 conda activate lbl-pca2d
-git clone <this repository> lbl-pca2d-gui
+git clone https://github.com/eartigau/lbl-pca2d-gui.git
 pip install -e lbl-pca2d-gui
 ```
 
