@@ -39,8 +39,6 @@ OBJECT = re.compile(r'^\s*OBJECT_SCIENCE="([^"]*)"')
 #: LBL's report, written at the end of an object's steps
 REPORT = re.compile(r"^Report written: ")
 COUNTER = re.compile(r"\bfile (\d+) of (\d+)\b")
-#: the most events a run keeps in memory (its log on disk keeps everything)
-MAX_EVENTS = 200000
 #: how long a run is given to stop before it is killed [s]
 GRACE = 10.0
 
@@ -117,8 +115,7 @@ class Job:
         self.ended = None
         self.exit = None
         self.pid = None
-        self.events = []          # dict(n, op, text, level)
-        self.first = 0            # the index of events[0]
+        self.events = []          # dict(n, op, text, level), all of them
         self.status = ""
         self.stage = ""
         self.counter = ""
@@ -140,7 +137,7 @@ class Job:
                     ended=self.ended, exit=self.exit, stage=self.stage,
                     counter=self.counter, status=self.status,
                     wrap=self.wrap, folder=self.folder,
-                    events=self.first + len(self.events),
+                    events=len(self.events),
                     reports=self.reports, meta=self.meta,
                     steps=self.steps)
 
@@ -148,12 +145,11 @@ class Job:
         """The events from index `start` on, waiting up to `wait` seconds
         for new ones; (events, next index, finished)."""
         with self.cond:
-            if wait and self.first + len(self.events) <= start \
+            if wait and len(self.events) <= start \
                     and self.state in ("queued", "running"):
                 self.cond.wait(timeout=wait)
-            begin = max(start, self.first) - self.first
-            out = self.events[begin:]
-            return (list(out), self.first + len(self.events),
+            out = self.events[max(start, 0):]
+            return (list(out), len(self.events),
                     self.state not in ("queued", "running"))
 
     # -- what the reader adds ------------------------------------------------
@@ -166,13 +162,11 @@ class Job:
         plain = strip(text)
         with self.cond:
             op = "replace" if self.transient and self.events else "add"
-            self.events.append(dict(n=self.first + len(self.events), op=op,
+            self.events.append(dict(n=len(self.events), op=op,
                                     text=plain, level=level))
+            # every event is kept, the page shows the whole log (a run of
+            #   three targets: 15000 lines, 1.6 MB)
             self.transient = transient
-            if len(self.events) > MAX_EVENTS:
-                drop = len(self.events) - MAX_EVENTS
-                self.events = self.events[drop:]
-                self.first += drop
             message = message_of(text)
             found = STAGE.search(message)
             if found:
@@ -210,7 +204,7 @@ class Job:
                 step["state"] = "done" if done else "running"
                 # the event the log reached it at: a click on the step
                 #   shows that line
-                step.setdefault("at", self.first + len(self.events) - 1)
+                step.setdefault("at", len(self.events) - 1)
                 self.step_at = index + 1 if done else index
                 return
 
@@ -229,7 +223,7 @@ class Job:
         """A line of the window's own (start, end, stop)."""
         stamp = datetime.datetime.now().strftime("%y%m%d %H:%M:%S.%f")[:-4]
         with self.cond:
-            self.events.append(dict(n=self.first + len(self.events),
+            self.events.append(dict(n=len(self.events),
                                     op="add", text="%s | %s" % (stamp, text),
                                     level=level))
             self.transient = False

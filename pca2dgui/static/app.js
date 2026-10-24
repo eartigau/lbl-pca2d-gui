@@ -12,8 +12,6 @@ const SERIES = ['--series-1', '--series-2', '--series-3', '--series-4',
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const SCATTER_COLOURED = 3;   // the palette's all-pairs cap (dataviz validator)
 const HIST_COLOURED = 8;      // its adjacent-pair cap
-const LOG_LINES = 50000;      // lines kept on the page (the log file keeps all;
-                              //   a run of three targets writes 15000)
 
 const DEFAULTS = {
   lang: 'en', theme: 'light', tab: 'targets', data_dir: '', instrument: '', source: '',
@@ -1215,7 +1213,6 @@ function selectJob(id) {
         // lv-: a line's level; a bare 'info' is the (i) of the helps
         logLast = el('div', { class: `lv-${event.level}`, text: event.text, 'data-n': event.n });
         box.append(logLast);
-        while (box.childElementCount > LOG_LINES) box.firstElementChild.remove();
       }
     });
     if (atBottom) box.scrollTop = box.scrollHeight;
