@@ -517,6 +517,20 @@ h2 .info { vertical-align: 3px; }
 .log .flash { animation: log-flash 2.4s ease-out; }
 @keyframes log-flash { 0%, 35% { background: rgba(98, 194, 255, 0.3); } 100% { background: transparent; } }
 .check.master { font-weight: 600; margin-bottom: 8px; }
+/* the archive search's own log */
+.archive-log { margin-top: 12px; }
+.archive-log summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+.archive-log-lines {
+  margin-top: 6px; max-height: 240px; overflow: auto; padding: 8px 10px;
+  background: var(--code-bg); color: #dfe8f5; border-radius: 10px;
+  font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; line-height: 1.45;
+}
+.archive-log-lines div { white-space: pre-wrap; word-break: break-word; }
+.archive-log-lines .lv-info { color: #c9d6ea; }
+.archive-log-lines .lv-warn { color: var(--warn); }
+.archive-log-lines .lv-error { color: var(--bad); }
+.archive-log-lines .muted { color: #7f8ba3; }
+.chip.stopped { color: #b4700a; border-color: rgba(250, 178, 25, 0.55); }
 .step.linked { cursor: pointer; }
 
 /* ── references ─────────────────────────────────────────────────────── */

@@ -348,13 +348,26 @@ function drawArchive() {
   const search = ARCHIVE.search || {};
   const fetch = ARCHIVE.fetch || {};
   $('archive_search').disabled = search.state === 'running' || Boolean(ARCHIVE.koloa);
+  // while a search goes, its Stop takes the place of Search
+  $('archive_search').hidden = search.state === 'running';
+  $('archive_search_stop').hidden = search.state !== 'running';
+  // what the search and the fetch are doing, line by line; followed when
+  //   it is at its bottom
+  const box = $('archive_log');
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 30;
+  const lines = ARCHIVE.log || [];
+  $('archive_log_box').hidden = !lines.length;
+  box.replaceChildren(...lines.map((line) => el('div', { class: `lv-${line.level}` },
+    el('span', { class: 'muted', text: `${line.t}  ` }), line.text)));
+  if (atBottom) box.scrollTop = box.scrollHeight;
   $('archive_star').textContent = search.main
     ? t('archive_star', search.main, search.teff ? Math.round(search.teff) : '?')
     : (search.error || '');
   $('archive_states').replaceChildren(...Object.entries(search.instruments || {}).map(([key, about]) => {
     const label = (ARCHIVE_INSTRUMENTS.find(([k]) => k === key) || [key, key])[1];
     const text = about.state === 'searching' ? t('archive_searching')
-      : about.state === 'failed' ? t('archive_failed') : t('archive_found', about.n || 0);
+      : about.state === 'failed' ? t('archive_failed')
+        : about.state === 'stopped' ? t('archive_stopped') : t('archive_found', about.n || 0);
     return el('span', { class: `chip ${about.state}`, 'data-tip': about.error ? esc(about.error) : null },
       about.state === 'searching' ? el('span', { class: 'ring' }) : null, `${label} · ${text}`);
   }));
@@ -1524,6 +1537,7 @@ async function init() {
   $('archive_target').onkeydown = (event) => { if (event.key === 'Enter') archiveSearch(); };
   $('archive_fetch').onclick = archiveFetch;
   $('archive_stop').onclick = async () => { ARCHIVE = await api.post('/api/archive/stop', {}); drawArchive(); };
+  $('archive_search_stop').onclick = async () => { ARCHIVE = await api.post('/api/archive/search/stop', {}); drawArchive(); };
   $('delete').onclick = deleteSelected;
 
   await loadInstrumentThings();

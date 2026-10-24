@@ -359,6 +359,8 @@ class Handler(BaseHTTPRequestHandler):
                 data_dir = ctx.allow(body.get("data_dir", ""))
                 return self._json(ctx.archives.start_fetch(
                     data_dir, body.get("ids") or []))
+            if route == "/api/archive/search/stop":
+                return self._json(ctx.archives.stop_search())
             if route == "/api/archive/stop":
                 ctx.archives.stop_fetch()
                 return self._json(ctx.archives.status())

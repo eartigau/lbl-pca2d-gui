@@ -81,11 +81,16 @@
               <input id="archive_target" type="text" spellcheck="false" autocomplete="off" placeholder="GJ 1, TOI-904, Barnard's star"></label>
             <div class="field"><span class="label" data-t="archive_instruments"></span><div id="archive_instruments" class="row gap wrap"></div></div>
             <button type="button" class="button primary" id="archive_search" data-t="archive_search"></button>
+            <button type="button" class="button danger" id="archive_search_stop" data-t="archive_search_stop" hidden></button>
           </div>
           <p class="small" id="archive_star"></p>
           <div id="archive_states" class="row gap wrap"></div>
           <div class="table-wrap" id="archive_wrap" hidden><table class="data" id="archive_table"></table></div>
           <div id="archive_bars" class="bars"></div>
+          <details class="archive-log" id="archive_log_box" open hidden>
+            <summary data-t="archive_log"></summary>
+            <div id="archive_log" class="archive-log-lines"></div>
+          </details>
           <div class="row spread archive-foot">
             <span class="hint" id="archive_progress"></span>
             <span class="row gap">

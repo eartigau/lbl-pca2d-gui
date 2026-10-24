@@ -96,3 +96,39 @@ def test_two_readers_found_together_get_two_folders(tmp_path, monkeypatch):
     # whichever answered first keeps the star's name, the other its reader's
     first, second = sorted(folders.values())
     assert first == "GJ1" and second in ("GJ1_ESPRESSO_None", "GJ1_NIRPS_HE_ESO")
+
+
+def test_a_search_stops_and_drops_a_late_answer(tmp_path, monkeypatch):
+    # an archive that does not answer (SOPHIE's, 2026-10-24) and one that
+    #   does: stopped, the search keeps what came and drops what comes late
+    import sys
+    import threading
+    import types
+    release = threading.Event()
+
+    def groups(target, inst, root, ident):
+        if inst == "SOPHIE":
+            release.wait(5)
+        return [_group(["%s.fits" % inst], lbl=inst, source="None")]
+    fake = types.SimpleNamespace(
+        _ident=lambda target: dict(main="V* AD Leo"), groups=groups,
+        INSTRUMENTS={k: dict(label=k, archive=k, size=1.0) for k in
+                     archives.INSTRUMENTS})
+    monkeypatch.setitem(sys.modules, "koloa", types.SimpleNamespace(lblrun=fake))
+    monkeypatch.setitem(sys.modules, "koloa.lblrun", fake)
+    monkeypatch.setattr(archives, "ROOT", str(tmp_path / "root"))
+    box = archives.Archives()
+    box.start_search("AD Leo", ["HARPS", "SOPHIE"], str(tmp_path))
+    for _ in range(100):
+        if box.status()["search"]["instruments"]["HARPS"]["state"] == "done":
+            break
+        time.sleep(0.05)
+    status = box.stop_search()
+    assert status["search"]["state"] == "done"
+    assert status["search"]["instruments"]["SOPHIE"]["state"] == "stopped"
+    release.set()
+    time.sleep(0.5)
+    status = box.status()
+    assert [g["inst"] for g in status["search"]["groups"]] == ["HARPS"]
+    texts = " ".join(line["text"] for line in status["log"])
+    assert "search stopped" in texts and "SOPHIE" in texts
