@@ -516,6 +516,7 @@ h2 .info { vertical-align: 3px; }
 .log { position: relative; }
 .log .flash { animation: log-flash 2.4s ease-out; }
 @keyframes log-flash { 0%, 35% { background: rgba(98, 194, 255, 0.3); } 100% { background: transparent; } }
+.check.master { font-weight: 600; margin-bottom: 8px; }
 .step.linked { cursor: pointer; }
 
 /* ── references ─────────────────────────────────────────────────────── */

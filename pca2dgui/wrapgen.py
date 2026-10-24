@@ -206,9 +206,15 @@ def build(state: dict) -> dict:
                 pca2d[key] = float(value)
         for key, value in (state.get("pca2d_extra") or {}).items():
             pca2d.setdefault(key, value)
-        if pca2d.get("joint") and len(targets) < 2:
-            warnings.append(say("warn_joint"))
-            pca2d.pop("joint")
+        # THE JOINT FIT: offered for several targets only, and on by default
+        #   there (one observer basis for stars observed together); for one
+        #   target it is not offered, and a value left from an earlier
+        #   choice of several is dropped
+        if len(targets) > 1:
+            if "joint" not in chosen:
+                pca2d["joint"] = True
+        else:
+            pca2d.pop("joint", None)
         if pca2d.get("input_name"):
             found = [b for b in lblinfo.bases(data_dir, instrument, source)
                      if b["name"] == pca2d["input_name"]]

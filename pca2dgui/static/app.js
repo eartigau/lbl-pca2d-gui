@@ -619,6 +619,7 @@ function toggle(name) {
   drawTargets();
   loadPoints();
   drawPerTarget();
+  drawOptions();
   wrapEdited = false;
   followTicked();
 }
@@ -961,7 +962,13 @@ function defaultName(key) {
 function drawOptions() {
   const holder = $('options');
   const groups = {};
-  OPTIONS.forEach((row) => { (groups[row.group] = groups[row.group] || []).push(row); });
+  // THE JOINT FIT means nothing for one target, and is what several want:
+  //   not offered for one, on by default for several (wrapgen.build does the
+  //   same)
+  const several = S.ticked.length > 1;
+  OPTIONS.filter((row) => row.key !== 'joint' || several)
+    .map((row) => (row.key === 'joint' ? { ...row, default: true } : row))
+    .forEach((row) => { (groups[row.group] = groups[row.group] || []).push(row); });
   const parts = [];
   ['model', 'bases', 'correction', 'runs', 'more'].forEach((group) => {
     if (!groups[group]) return;
@@ -985,6 +992,28 @@ function drawOptions() {
 // NIRPS's and SPIRou's spectra come telluric-corrected (APERO): LBL's own
 //   telluric cleaning is off for them, and cannot be ticked
 const NO_TELLUCLEAN = ['NIRPS', 'SPIROU'];
+// REWRITE OR KEEP what is on disk, for every LBL step at once: the SKIP_LBL_*
+//   switches together (template, mask and velocities kept by default, the
+//   rdb tables always compiled again), each still set on its own below
+const KEEP_KEYS = ['SKIP_LBL_TEMPLATE', 'SKIP_LBL_MASK', 'SKIP_LBL_COMPUTE'];
+function switchValue(key) {
+  const row = SWITCHES.find((r) => r.key === key) || {};
+  return Object.prototype.hasOwnProperty.call(S.lbl, key) ? S.lbl[key] : row.default;
+}
+function drawOverwrite() {
+  const kept = KEEP_KEYS.map((key) => Boolean(switchValue(key)));
+  const box = $('overwrite_all');
+  box.checked = kept.every((v) => !v) && !switchValue('SKIP_LBL_COMPILE');
+  box.indeterminate = !box.checked && !kept.every((v) => v);
+}
+function setOverwrite(rewrite) {
+  KEEP_KEYS.forEach((key) => { S.lbl[key] = !rewrite; });
+  S.lbl.SKIP_LBL_COMPILE = false;
+  wrapEdited = false;
+  save();
+  drawSwitches();
+}
+
 function drawSwitches() {
   $('switches').replaceChildren(...SWITCHES.map((row) => {
     let value = Object.prototype.hasOwnProperty.call(S.lbl, row.key) ? S.lbl[row.key] : row.default;
@@ -992,9 +1021,10 @@ function drawSwitches() {
     const locked = row.key === 'RUN_LBL_TELLUCLEAN' && NO_TELLUCLEAN.includes(family(S.instrument));
     return el('label', { class: `check${locked ? ' locked' : ''}`, title: locked ? t('tellu_off') : null }, el('input', {
       type: 'checkbox', checked: locked ? false : Boolean(value), disabled: locked,
-      onchange: (event) => { S.lbl[row.key] = event.target.checked; wrapEdited = false; save(); },
+      onchange: (event) => { S.lbl[row.key] = event.target.checked; wrapEdited = false; save(); drawOverwrite(); },
     }), t(`sw_${row.key}`), info(`help_sw_${row.key}`));
   }));
+  drawOverwrite();
   $('resproj').checked = Boolean(S.resproj);
 }
 
@@ -1460,6 +1490,7 @@ async function init() {
   $('queue').onclick = queue;
   $('save_wrap').onclick = () => saveWrap(false);
   $('stop').onclick = stopJob;
+  $('overwrite_all').onchange = (event) => setOverwrite(event.target.checked);
   $('refs_copy').onclick = copyBibtex;
   $('refs_filter').oninput = drawRefs;
   // to the top: the log stops following the run; to the bottom: it follows again

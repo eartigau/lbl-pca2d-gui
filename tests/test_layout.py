@@ -82,3 +82,21 @@ def test_an_old_window_wrap_is_written_commented():
     assert "# the folders of science/ to measure" in out
     edited = bare.replace("n_earth=7", "n_earth=5")
     assert wrapgen.window_text(edited, rparams, "x") == edited
+
+
+def test_the_joint_fit_is_the_default_for_several_targets_only(tmp_path):
+    for name in ("A", "B"):
+        folder = tmp_path / "science" / name
+        folder.mkdir(parents=True)
+        _cadc(str(folder / ("%s_1t.fits" % name)))
+    base = dict(data_dir=str(tmp_path), instrument="SPIROU", source="CADC",
+                teff={"A": 3500, "B": 3400}, pca2d_on=True,
+                pca2d=dict(n_star=1, n_earth=7))
+    two = wrapgen.build(dict(base, targets=["A", "B"]))["rparams"]["PCA2D"]
+    assert two.get("joint") is True
+    one = wrapgen.build(dict(base, targets=["A"],
+                             pca2d=dict(n_star=1, n_earth=7, joint=True)))
+    assert "joint" not in one["rparams"]["PCA2D"] and not one["warnings"]
+    off = wrapgen.build(dict(base, targets=["A", "B"],
+                             pca2d=dict(n_star=1, n_earth=7, joint=False)))
+    assert "joint" not in off["rparams"]["PCA2D"]
