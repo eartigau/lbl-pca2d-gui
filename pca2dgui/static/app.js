@@ -72,7 +72,9 @@ function el(tag, attrs, ...children) {
     else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
     else node.setAttribute(k, v === true ? '' : v);
   });
-  children.flat().forEach((child) => {
+  // flattened all the way: a list of [link, ' '] pairs was written out as
+  //   text, every link as its address (the Runs tab's reports)
+  children.flat(Infinity).forEach((child) => {
     if (child === null || child === undefined || child === false) return;
     node.append(child instanceof Node ? child : document.createTextNode(String(child)));
   });
@@ -100,8 +102,10 @@ function mjdDate(mjd) {
 }
 function when(seconds) {
   if (!seconds) return '';
+  // the machine's own time, not UTC: a run started at 14:44 said 18:44
   const date = new Date(seconds * 1000);
-  return date.toISOString().slice(0, 16).replace('T', ' ');
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 function took(start, end) {
   if (!start) return '';
@@ -1380,7 +1384,7 @@ async function loadRuns() {
       el('td', { class: 'mono', text: run.started ? took(run.started, run.ended) : '' }),
       el('td', {}, (run.reports || []).map((p) => [fileLink(p, p.split('/').pop()), ' '])),
       el('td', {}, fileLink(run.log, 'run.log'), ' ', fileLink(run.wrap, 'wrap.py')))));
-  table($('runs_reports'), ['col_name', 'col_date', 'col_size'],
+  table($('runs_reports'), ['col_name', 'col_date', 'col_bytes'],
     (data.reports || []).map((report) => el('tr', {},
       el('td', {}, fileLink(report.path, report.name)),
       el('td', { class: 'mono', text: when(report.mtime) }),

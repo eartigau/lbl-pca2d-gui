@@ -19,8 +19,10 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
+sys.path.insert(0, HERE)
 
 from pca2dgui import __version__, i18n, lblinfo        # noqa: E402
+import guide_tutorial                                     # noqa: E402
 
 THEMES = os.path.expanduser("~/GitHubProjects/themes_outils")
 REPO = "https://github.com/eartigau/lbl-pca2d-gui"
@@ -146,7 +148,7 @@ def switches_reference():
 
 
 # ---------------------------------------------------------------------- page
-def page():
+def page(results=None):
     today = datetime.date.today().isoformat()
     sections = []
 
@@ -318,6 +320,18 @@ pip install --no-deps -e koloa
 """)
     sections.append(card("install", "Installing", "Installation",
                          both(install_en, install_fr)))
+
+    # THE TUTORIAL: one example from end to end, screenshot by screenshot
+    sections.append(card("tutorial", "Step by step: a first run",
+                         "Pas à pas : un premier run",
+                         guide_tutorial.tutorial(code, results or {})))
+    sections.append('<section class="card span-3 part" id="reference">'
+                    '<h2>%s</h2><p class="hint">%s</p></section>' % (
+                        inline("Reference", "Référence"),
+                        inline("Every part of the window, every option, every"
+                               " file a run writes.",
+                               "Chaque partie de la fenêtre, chaque option,"
+                               " chaque fichier qu'un run écrit.")))
 
     data_en = """
 <p>LBL works in one folder, <code>DATA_DIR</code>. Each target is a
@@ -806,6 +820,9 @@ Ctrl+Maj+R).</li>
             ("short", "In short", "En bref"),
             ("before", "Before you start", "Avant de commencer"),
             ("install", "Installing", "Installation"),
+            ("tutorial", "Step by step: a first run",
+             "Pas à pas : un premier run"),
+            ("reference", "Reference", "Référence"),
             ("data", "The data folder", "Le dossier de données"),
             ("launch", "Starting the window", "Lancer la fenêtre"),
             ("tab-targets", "Tab: Targets", "Onglet : Cibles"),
@@ -939,6 +956,27 @@ table.data td, table.data th { border-bottom: 1px solid var(--line); padding: 6p
 table.data th { color: var(--muted); font-weight: 500; }
 .lecture-figure { margin: 14px 0 0; }
 @media (max-width: 720px) { .contents ol { columns: 1; } }
+/* the tutorial: numbered steps, badges as on the screenshots */
+.lead { font-size: 1.05rem; }
+.step { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 16px; border-top: 1px solid var(--line); padding: 22px 0 8px; }
+.step-num { width: 44px; height: 44px; border-radius: 50%%; background: var(--accent); color: #08111f; font: 700 1.3rem "Space Grotesk", sans-serif; display: flex; align-items: center; justify-content: center; }
+.step h3 { margin: 6px 0 12px; font-size: 1.2rem; color: var(--text); }
+.badge { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%%; background: #ff5400; color: #fff; font-weight: 700; font-size: 0.9rem; border: 2px solid #fff; }
+.marks { list-style: none; padding: 0; margin: 10px 0 14px; }
+.marks li { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }
+.marks li span:last-child { padding-top: 2px; }
+.shot.narrow img { max-width: 470px; display: block; }
+.shot img { border-radius: 10px; border: 1px solid var(--line); width: 100%%; background: #fff; }
+.callout { border-radius: 12px; padding: 10px 14px; margin: 12px 0; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); }
+.callout > strong { display: block; margin-bottom: 4px; font-size: 0.86rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.callout.see { border-color: rgba(108, 226, 173, 0.55); } .callout.see > strong { color: #6ce2ad; }
+.callout.tip { border-color: rgba(98, 194, 255, 0.55); } .callout.tip > strong { color: var(--accent); }
+.callout.why { border-color: rgba(178, 160, 255, 0.55); } .callout.why > strong { color: #b2a0ff; }
+.callout.example { border-color: rgba(255, 180, 84, 0.6); } .callout.example > strong { color: #ffb454; }
+.callout p { margin: 4px 0; }
+.part { background: transparent; border: none; padding: 30px 16px 0; }
+.part h2 { font-size: 1.6rem; }
+@media (max-width: 720px) { .step { grid-template-columns: 1fr; } }
 """
 
 WORKFLOW_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 250" font-family="Space Grotesk, sans-serif">
@@ -969,11 +1007,195 @@ WORKFLOW_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 250"
 """
 
 
-def main(site):
+# ------------------------------------------------------- the example run
+def _stamp(line):
+    """The time of an LBL log line (2026-10-24 14:44:49.053|I|...)."""
+    try:
+        return datetime.datetime.strptime(line[:23], "%Y-%m-%d %H:%M:%S.%f")
+    except ValueError:
+        return None
+
+
+def machine():
+    """The machine the example ran on, as its system says (macOS)."""
+    import subprocess
+    try:
+        cpu = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                             capture_output=True, text=True).stdout.strip()
+        mem = int(subprocess.run(["sysctl", "-n", "hw.memsize"],
+                                 capture_output=True, text=True).stdout)
+        return "%s, %d GB" % (cpu, round(mem / 2 ** 30))
+    except Exception:                                     # noqa: BLE001
+        return ""
+
+
+def _minutes(a, b):
+    return max(1, int(round((b - a).total_seconds() / 60.0)))
+
+
+def example_results(example, site_folder):
+    """What the tutorial's example run produced, for its steps 9 and 10:
+    how long each part took (its log), the first rows of its corrected
+    velocities (lblrdb), and pages of its report drawn as images."""
+    import glob
+    import json
+    import subprocess
+    data = os.path.join(example, "data")
+    runs = sorted(glob.glob(os.path.join(data, "gui", "runs", "*", "run.json")))
+    if not runs:
+        return {}
+    record = json.load(open(runs[-1]))
+    lines = open(os.path.join(os.path.dirname(runs[-1]), "run.log")).read() \
+        .splitlines()
+    marks = [(i, l) for i, l in enumerate(lines) if _stamp(l)]
+    first = _stamp(marks[0][1]) if marks else None
+    reports = [_stamp(l) for _, l in marks if "Report written" in l]
+    cube = next((_stamp(l) for _, l in marks if "stage cube" in l), None)
+    after = None
+    if cube:
+        seen_correct = False
+        for _, l in marks:
+            if "stage correct" in l:
+                seen_correct = True
+            elif seen_correct and "LBL Template" in l:
+                after = _stamp(l)
+                break
+    out = {}
+    if first and len(reports) >= 2 and cube and after:
+        total = (record.get("ended") or 0) - (record.get("started") or 0)
+        a, b, c = (_minutes(first, reports[0]), _minutes(cube, after),
+                   _minutes(after, reports[-1]))
+        mins = int(round(total / 60.0)) if total > 0 else a + b + c
+        where = machine()
+        out["durations_en"] = (
+            "<p>On a laptop (%s), the %d spectra took about"
+            " <strong>%d minutes</strong> in all: %d for the telluric cleaning"
+            " and LBL on the delivered spectra, %d for PCA2D (cube, fit,"
+            " figures, correction), %d for LBL on the corrected spectra and"
+            " the report.</p>" % (where, guide_tutorial.EXAMPLE["spectra"],
+                                  mins, a, b, c))
+        out["durations_fr"] = (
+            "<p>Sur un portable (%s), les %d spectres ont pris"
+            " environ <strong>%d minutes</strong> en tout : %d pour le"
+            " nettoyage tellurique et LBL sur les spectres livrés, %d pour"
+            " PCA2D (cube, fit, figures, correction), %d pour LBL sur les"
+            " spectres corrigés et le rapport.</p>"
+            % (where.replace("GB", "Go"), guide_tutorial.EXAMPLE["spectra"],
+               mins, a, b, c))
+    # the corrected velocities: the newest lbl_ table of the corrected object
+    tables = sorted(glob.glob(os.path.join(data, "lblrdb", "lbl_*pca2d*.rdb")),
+                    key=os.path.getmtime)
+    if tables:
+        rows = [l.rstrip("\n").split("\t") for l in open(tables[-1])
+                if l.strip()]
+        head = rows[0]
+        # a few columns, rounded as one reads them: the date to 1e-4 d,
+        #   the velocity and its error to 1 cm/s, in the order of time
+        formats = (("rjd", "%.4f"), ("vrad", "%.2f"), ("svrad", "%.2f"),
+                   ("d2v", "%.0f"))
+        keep = [(head.index(c), f) for c, f in formats if c in head]
+        body = sorted(rows[2:], key=lambda row: float(row[head.index("rjd")]))
+        lines = ["  ".join("%14s" % head[j] for j, _ in keep)]
+        for row in body[:5]:
+            lines.append("  ".join("%14s" % (f % float(row[j]))
+                                   for j, f in keep))
+        lines.append("  ".join("%14s" % "..." for _ in keep))
+        shown = "\n".join(lines)
+        name = os.path.basename(tables[-1])
+        out["results_en"] = (
+            "<p>The velocities are in <code>lblrdb/%s</code>, one row per"
+            " exposure (<code>lbl2_</code>: per night). A few of its"
+            " columns: the date (rjd, BJD - 2400000), the velocity and its"
+            " error (vrad, svrad, in m/s, the systemic velocity included),"
+            " and d2v (m&sup2;/s&sup2;), the line-width indicator:</p>%s"
+            % (esc(name), code(shown)))
+        out["results_fr"] = (
+            "<p>Les vitesses sont dans <code>lblrdb/%s</code>, une ligne par"
+            " pose (<code>lbl2_</code> : par nuit). Quelques-unes de ses"
+            " colonnes : la date (rjd, BJD - 2400000), la vitesse et son"
+            " erreur (vrad, svrad, en m/s, vitesse systémique comprise), et"
+            " d2v (m&sup2;/s&sup2;), l'indicateur de largeur des raies :</p>%s"
+            % (esc(name), code(shown)))
+    out["report_pages"] = report_shots(data, site_folder)
+    return out
+
+
+#: the pages of the example's report shown in the tutorial: a line of their
+#:    text that finds them, the image's name, the part of the page kept and
+#:    what to point at, in pixels of the page drawn at 50 dpi (x, y, w, h)
+REPORT_PAGES = (
+    dict(find="1 The velocity series", name="report_series",
+         crop=(15, 38, 395, 282),
+         marks=[(1, (65, 108, 253, 108), "left"),
+                (2, (320, 106, 26, 112), "right"),
+                (3, (65, 243, 296, 63), "left")]),
+    dict(find="3 Summary", name="report_summary",
+         crop=(15, 225, 395, 322),
+         marks=[(1, (36, 283, 300, 36), "left"),
+                (2, (44, 452, 328, 92), "left")]),
+)
+#: the resolution the pages are drawn at, for the screen
+REPORT_DPI = 110
+
+
+def report_shots(data, site_folder):
+    """Pages of the example's report as annotated images in shots/; the
+    names of those made."""
+    import glob
+    import subprocess
+    from annotate import annotate
+    pdfs = sorted(glob.glob(os.path.join(data, "reports", "*pca2d*.pdf")),
+                  key=os.path.getmtime)
+    if not pdfs:
+        return []
+    pdf = pdfs[-1]
+    pages = int(subprocess.run(["pdfinfo", pdf], capture_output=True,
+                               text=True).stdout.split("Pages:")[1]
+                .split()[0])
+    target = os.path.join(site_folder, "shots")
+    os.makedirs(target, exist_ok=True)
+    scale = REPORT_DPI / 50.0
+    made = []
+    for spec in REPORT_PAGES:
+        number = None
+        for n in range(1, min(pages, 15) + 1):
+            text = subprocess.run(["pdftotext", "-f", str(n), "-l", str(n),
+                                   "-layout", pdf, "-"], capture_output=True,
+                                  text=True).stdout
+            text = " ".join(text.split())
+            if spec["find"] in text and "Contents" not in text:
+                number = n
+                break
+        if number is None:
+            continue
+        x0, y0, w, h = (int(round(v * scale)) for v in spec["crop"])
+        base = os.path.join(target, spec["name"])
+        subprocess.run(["pdftoppm", "-r", str(REPORT_DPI), "-png",
+                        "-singlefile", "-f", str(number), "-l", str(number),
+                        "-x", str(x0), "-y", str(y0), "-W", str(w), "-H",
+                        str(h), pdf, base], check=True)
+        boxes = [(k, dict(x=bx * scale, y=by * scale, width=bw * scale,
+                          height=bh * scale), side)
+                 for k, (bx, by, bw, bh), side in spec["marks"]]
+        annotate(base + ".png", boxes, (x0, y0))
+        made.append(spec["name"])
+    return made
+
+
+def main(site, shots=None, example=None):
     folder = os.path.join(os.path.abspath(os.path.expanduser(site)), "lbl-gui")
     os.makedirs(folder, exist_ok=True)
+    if shots:
+        # the tutorial's screenshots (tools/tutorial_shots.py)
+        target = os.path.join(folder, "shots")
+        os.makedirs(target, exist_ok=True)
+        for name in sorted(os.listdir(shots)):
+            if name.endswith(".webp"):
+                shutil.copyfile(os.path.join(shots, name),
+                                os.path.join(target, name))
+    results = example_results(example, folder) if example else {}
     with open(os.path.join(folder, "index.html"), "w") as handle:
-        handle.write(page())
+        handle.write(page(results))
     with open(os.path.join(folder, "guide.css"), "w") as handle:
         handle.write(GUIDE_CSS.replace("%%", "%"))
     words = dict(
@@ -996,4 +1218,4 @@ def main(site):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(*sys.argv[1:4])
