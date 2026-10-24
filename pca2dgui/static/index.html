@@ -250,7 +250,13 @@
             </span>
           </div>
           <div class="status-line mono small" id="log_status"></div>
-          <div id="log" class="log"></div>
+          <div class="log-wrap">
+            <div id="log" class="log"></div>
+            <div class="log-jumps">
+              <button type="button" class="log-jump" id="log_top" data-t-title="log_top">↑</button>
+              <button type="button" class="log-jump" id="log_bottom" data-t-title="log_bottom">↓</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>

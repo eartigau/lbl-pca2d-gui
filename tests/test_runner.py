@@ -138,6 +138,9 @@ def test_the_steps_tick_off_as_the_log_goes(tmp_path):
         job.add(_line(text), False)
     states = [s["state"] for s in job.steps]
     assert states[:3] == ["done", "running", "pending"]
+    # where the log reached each step (a click shows that line): the first
+    #   time, not the template's second pass
+    assert [s.get("at") for s in job.steps[:3]] == [1, 5, None]
     for text in ("\tLBL Compute", '\tOBJECT_SCIENCE="TOI904"',
                  "\tLBL Compil", '\tOBJECT_SCIENCE="TOI904"',
                  "Report written: /a/TOI904_GL514.pdf", "stage cube",

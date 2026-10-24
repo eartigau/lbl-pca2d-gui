@@ -12,7 +12,8 @@ const SERIES = ['--series-1', '--series-2', '--series-3', '--series-4',
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const SCATTER_COLOURED = 3;   // the palette's all-pairs cap (dataviz validator)
 const HIST_COLOURED = 8;      // its adjacent-pair cap
-const LOG_LINES = 5000;       // lines kept on the page (the log file keeps all)
+const LOG_LINES = 50000;      // lines kept on the page (the log file keeps all;
+                              //   a run of three targets writes 15000)
 
 const DEFAULTS = {
   lang: 'en', theme: 'light', tab: 'targets', data_dir: '', instrument: '', source: '',
@@ -173,6 +174,7 @@ async function loadStrings() {
   T = await api.get('/api/strings', { lang: S.lang });
   document.documentElement.lang = S.lang;
   document.querySelectorAll('[data-t]').forEach((node) => { node.textContent = t(node.dataset.t); });
+  document.querySelectorAll('[data-t-title]').forEach((node) => { node.title = t(node.dataset.tTitle); node.setAttribute('aria-label', node.title); });
   document.querySelectorAll('[data-help]').forEach((node) => { node.textContent = 'i'; node.dataset.tip = helpHtml(t(`help_${node.dataset.help}`)); });
   $('lang').textContent = T.lang_switch;
   applyTheme();
@@ -1055,7 +1057,11 @@ function drawSteps(steps, title) {
   });
   holder.replaceChildren(...groups.map((group) => el('div', { class: 'step-group' },
     el('span', { class: 'step-obj mono', text: group.obj }),
-    ...group.steps.map((step) => el('span', { class: `step ${step.state || 'pending'}` },
+    ...group.steps.map((step) => el('span', {
+      class: `step ${step.state || 'pending'}${step.at === undefined ? '' : ' linked'}`,
+      title: step.at === undefined ? null : t('step_goto'),
+      onclick: step.at === undefined ? null : () => showStep(step),
+    },
       step.state === 'running' ? el('span', { class: 'ring' })
         : el('span', { class: 'step-icon', text: STEP_ICON[step.state || 'pending'] }),
       t(`step_${step.kind}`))))));
@@ -1207,17 +1213,47 @@ function selectJob(id) {
         logLast.className = `lv-${event.level}`;
       } else {
         // lv-: a line's level; a bare 'info' is the (i) of the helps
-        logLast = el('div', { class: `lv-${event.level}`, text: event.text });
+        logLast = el('div', { class: `lv-${event.level}`, text: event.text, 'data-n': event.n });
         box.append(logLast);
         while (box.childElementCount > LOG_LINES) box.firstElementChild.remove();
       }
     });
     if (atBottom) box.scrollTop = box.scrollHeight;
+    logEdges();
   };
   stream.onmessage = (message) => apply(JSON.parse(message.data));
   stream.addEventListener('end', (message) => { apply(JSON.parse(message.data)); stream.close(); stream = null; pollQueue(); });
   stream.onerror = () => { /* the browser reconnects on its own */ };
   pollQueue();
+}
+
+/* a step clicked: the log at the line it reached that step on (the last
+   line from at or before its event: a bar's frames replace their line) */
+function showStep(step) {
+  const box = $('log');
+  const lines = box.children;
+  if (!lines.length) return;
+  let lo = 0;
+  let hi = lines.length - 1;
+  let found = 0;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (Number(lines[mid].dataset.n) <= step.at) { found = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  const line = lines[found];
+  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  box.scrollTop = Math.max(0, line.offsetTop - 8);
+  line.classList.remove('flash');
+  void line.offsetWidth;
+  line.classList.add('flash');
+  logEdges();
+}
+
+/* the jumps of the log: off where the log already is */
+function logEdges() {
+  const box = $('log');
+  $('log_top').disabled = box.scrollTop < 4;
+  $('log_bottom').disabled = box.scrollHeight - box.scrollTop - box.clientHeight < 4;
 }
 
 async function stopJob() {
@@ -1366,6 +1402,11 @@ async function init() {
   $('queue').onclick = queue;
   $('save_wrap').onclick = () => saveWrap(false);
   $('stop').onclick = stopJob;
+  // to the top: the log stops following the run; to the bottom: it follows again
+  $('log_top').onclick = () => { $('log').scrollTop = 0; };
+  $('log_bottom').onclick = () => { const box = $('log'); box.scrollTop = box.scrollHeight; };
+  $('log').onscroll = logEdges;
+  logEdges();
   $('runs_refresh').onclick = loadRuns;
   $('measure').onclick = measure;
   $('best_all').onclick = () => bestMatch(S.ticked);

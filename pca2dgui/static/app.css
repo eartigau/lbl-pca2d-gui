@@ -501,6 +501,40 @@ h2 .info { vertical-align: 3px; }
   color: #dfe8f5;
 }
 .log div { white-space: pre-wrap; word-break: break-word; }
+/* the log is dark in both themes: its scrollbar always shown (macOS hides
+   them until one scrolls) and its two jumps, to the top and the bottom */
+.log { --log-thumb: rgba(168, 180, 202, 0.5); --log-thumb-hover: rgba(168, 180, 202, 0.8); }
+.log::-webkit-scrollbar { width: 12px; height: 12px; }
+.log::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 12px; }
+.log::-webkit-scrollbar-thumb { background: var(--log-thumb); border-radius: 12px; border: 3px solid #050b15; }
+.log::-webkit-scrollbar-thumb:hover { background: var(--log-thumb-hover); }
+@supports not selector(::-webkit-scrollbar) {
+  .log { scrollbar-width: auto; scrollbar-color: var(--log-thumb) rgba(255, 255, 255, 0.05); }
+}
+.log-wrap { position: relative; }
+/* the lines' offsetTop from the log itself: a step clicked scrolls to its line */
+.log { position: relative; }
+.log .flash { animation: log-flash 2.4s ease-out; }
+@keyframes log-flash { 0%, 35% { background: rgba(98, 194, 255, 0.3); } 100% { background: transparent; } }
+.step.linked { cursor: pointer; }
+.step.linked:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
+.log-jumps {
+  position: absolute; top: 10px; bottom: 10px; right: 24px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  pointer-events: none;
+}
+.log-jump {
+  pointer-events: auto;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid rgba(98, 194, 255, 0.45);
+  background: rgba(10, 20, 36, 0.9);
+  color: #62c2ff; font-size: 1.05rem; line-height: 1;
+  cursor: pointer; opacity: 0.8;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.15s, background 0.15s;
+}
+.log-jump:hover { opacity: 1; background: rgba(98, 194, 255, 0.22); }
+.log-jump:disabled { opacity: 0.2; cursor: default; background: rgba(10, 20, 36, 0.9); }
 /* a line's level is lv-*: a bare .info is the (i) of the helps, a 16 px
    circle, and the log's green lines once took it (one letter per line) */
 .log .lv-info { color: var(--good); }

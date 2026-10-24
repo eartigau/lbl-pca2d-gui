@@ -208,6 +208,9 @@ class Job:
                     if before["state"] in ("pending", "running"):
                         before["state"] = "done"
                 step["state"] = "done" if done else "running"
+                # the event the log reached it at: a click on the step
+                #   shows that line
+                step.setdefault("at", self.first + len(self.events) - 1)
                 self.step_at = index + 1 if done else index
                 return
 
