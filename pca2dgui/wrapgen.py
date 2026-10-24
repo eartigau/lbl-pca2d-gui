@@ -231,8 +231,110 @@ def build(state: dict) -> dict:
     return dict(rparams=rparams, errors=errors, warnings=warnings)
 
 
+#: the wrap's comments, so that one reads it without the window: its
+#:    sections, in order, and a line or two above each setting (English, as
+#:    LBL's own code and wraps are)
+WRAP_SECTIONS = (
+    ("instrument and data", (
+        ("INSTRUMENT", "the spectrograph, as LBL names it"),
+        ("DATA_SOURCE", "the pipeline its files come from: LBL reads each "
+         "pipeline's file layout with a class of its own"),
+        ("DATA_DIR", "the data folder: the spectra in science/<object>/, and "
+         "LBL's products beside them (templates/, masks/, lblrv/, lblrdb/, "
+         "...)"),
+        ("INPUT_FILE", "the files of science/<object>/ that LBL reads"),
+        ("BLAZE_CORRECTED", "whether the spectra come with the blaze already "
+         "divided out"),
+        ("BLAZE_FILE", "the blaze, in calib/"),
+    )),
+    ("targets: one entry per object, in the same order in each list", (
+        ("DATA_TYPES", "SCIENCE for a star (FP or LFC for a calibration "
+         "source)"),
+        ("OBJECT_SCIENCE", "the folders of science/ to measure"),
+        ("OBJECT_COMPARISON", "the template each one is measured against: its "
+         "own, another star's, or a vetted template (VETTED_<star>, fetched "
+         "from LBL's model repository the first time)"),
+        ("OBJECT_TEFF", "effective temperature [K]: it picks the line mask"),
+        ("RESPROJ_TABLES", "the residual projections measured on every "
+         "spectrum, here the temperature-change indicator (dTEMP)"),
+    )),
+    ("LBL's steps: RUN_ runs one, SKIP_ keeps an earlier run's", (
+        ("RUN_LBL_TELLUCLEAN", "LBL's own telluric correction (off for "
+         "spectra that come corrected, as NIRPS's and SPIRou's do)"),
+        ("RUN_LBL_TEMPLATE", "build the template from the spectra"),
+        ("RUN_LBL_MASK", "build the line mask from the template"),
+        ("RUN_LBL_COMPUTE", "measure every line's velocity in every spectrum "
+         "(lblrv/)"),
+        ("RUN_LBL_COMPILE", "combine the lines into one velocity per spectrum "
+         "(lblrdb/)"),
+        ("SKIP_LBL_TEMPLATE", "True: a template already made is kept"),
+        ("SKIP_LBL_MASK", "True: a mask already made is kept"),
+        ("SKIP_LBL_COMPUTE", "True: the spectra already measured are not "
+         "measured again"),
+        ("SKIP_LBL_COMPILE", "True: a table already compiled is kept"),
+        (lblinfo.SKIP_PCA2D, "True: a PCA2D fit and corrected spectra "
+         "already made are kept"),
+        ("REPORT", "write a PDF report of each run's velocities"),
+        ("PLANETS", "build the template on the BERV plus the Keplerian "
+         "velocity of the star's known companions, when LBL's planet "
+         "catalogs have them (the velocities stay BERV-corrected only)"),
+    )),
+)
+#: above the PCA2D settings
+WRAP_PCA2D = ("the telluric and instrumental residuals are fitted in two "
+              "frames (the star's and the observer's) and taken out of the "
+              "spectra before LBL measures them again; only what differs from "
+              "the nominal settings is written")
+#: a comment line's width
+WRAP_WIDTH = 79
+#: the PCA2D options whose help starts from another's (the window lays them
+#:    one under the other): their comment in the wrap, which has no "above"
+WRAP_OPTIONS = dict(
+    column_frac="the column test, observer's frame: a wavelength where more "
+    "than this fraction of the exposures was clipped, and whose survivors "
+    "still have a reduced chi2 above column_chi2, is blanked in every "
+    "exposure",
+    column_chi2="the column test's second condition: the reduced chi2 of the "
+    "exposures left after clipping",
+    star_column_frac="the column test (column_frac) in the star's frame",
+    star_column_chi2="the column test's chi2 (column_chi2) in the star's "
+    "frame",
+    star_bias_nsig="the bias test (bias_nsig) in the star's frame",
+)
+
+
+def _comment(text: str, indent: int) -> list:
+    """A comment, wrapped, its continued lines indented as LBL's are."""
+    import textwrap
+    pad = " " * indent
+    return textwrap.wrap(text, width=WRAP_WIDTH, initial_indent=pad + "# ",
+                         subsequent_indent=pad + "#   ")
+
+
+def _rule(title: str) -> str:
+    """A section's heading: its title in a rule as wide as the comments."""
+    head = "    # ---- %s " % title
+    return head + "-" * max(3, WRAP_WIDTH - len(head))
+
+
+def _option_comment(key: str) -> str:
+    """A PCA2D option's comment: the first sentence of its help, as the
+    other comments are written (no capital, no full stop)."""
+    if key in WRAP_OPTIONS:
+        return WRAP_OPTIONS[key]
+    known = i18n.OPTIONS.get(key)
+    if not known or not known[1]:
+        return ""
+    text = known[1][0].split("\n")[0].strip()
+    first = re.split(r"(?<=[.:])\s", text, maxsplit=1)[0].rstrip(".:")
+    # a capital that is not an acronym's (ONE, LBL) goes down
+    if len(first) > 1 and not first[1].isupper():
+        first = first[0].lower() + first[1:]
+    return first
+
+
 def render(rparams: dict, name: str = "", python: str = "") -> str:
-    """The wrap.py of these run parameters."""
+    """The wrap.py of these run parameters, commented."""
     python = python or sys.executable
     when = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     targets = ", ".join(rparams.get("OBJECT_SCIENCE") or [])
@@ -248,22 +350,43 @@ def render(rparams: dict, name: str = "", python: str = "") -> str:
         "",
         "    %s %s" % (python, "wrap.py"),
         "",
-        "It runs by hand as it is: what the window ran is all here.",
+        "It runs by hand as it is: what the window ran is all here. Every "
+        "setting",
+        "is explained above it; LBL's documentation lists the others a wrap "
+        "can hold.",
         '"""',
         "from lbl.recipes import lbl_wrap",
         "",
         'if __name__ == "__main__":',
         "    rparams = dict()",
     ]
-    for key, value in rparams.items():
-        if key == "PCA2D":
+    done = {"PCA2D"}
+    for title, keys in WRAP_SECTIONS:
+        present = [(key, text) for key, text in keys if key in rparams]
+        if not present:
             continue
-        lines.append("    rparams[%r] = %r" % (key, value))
+        lines.append("")
+        lines.append(_rule(title))
+        for key, text in present:
+            lines += _comment(text, 4)
+            lines.append("    rparams[%r] = %r" % (key, rparams[key]))
+            done.add(key)
+    others = [key for key in rparams if key not in done]
+    if others:
+        lines.append("")
+        lines.append(_rule("other settings, as a loaded wrap held them"))
+        for key in others:
+            lines.append("    rparams[%r] = %r" % (key, rparams[key]))
     if "PCA2D" in rparams:
+        lines.append("")
+        lines.append(_rule("PCA2D precleaning"))
+        lines += _comment(WRAP_PCA2D, 4)
         lines.append("    rparams['PCA2D'] = dict(")
         for key, value in rparams["PCA2D"].items():
+            lines += _comment(_option_comment(key), 8)
             lines.append("        %s=%r," % (key, value))
         lines.append("    )")
+    lines.append("")
     lines.append("    lbl_wrap.main(rparams)")
     return "\n".join(lines) + "\n"
 

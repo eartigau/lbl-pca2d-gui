@@ -47,3 +47,23 @@ def test_the_wrap_refuses_a_source_the_files_are_not_for(tmp_path):
     built = wrapgen.build(state)
     assert any("CADC" in e for e in built["errors"])
     assert wrapgen.build(dict(state, source="CADC"))["errors"] == []
+
+
+def test_the_commented_wrap_reads_back(tmp_path):
+    from pca2dgui import wrapload
+    rparams = dict(INSTRUMENT="SPIROU", DATA_SOURCE="CADC", DATA_DIR="/x",
+                   DATA_TYPES=["SCIENCE"], OBJECT_SCIENCE=["A"],
+                   OBJECT_COMPARISON=["VETTED_GJ411"], OBJECT_TEFF=[3595],
+                   RUN_LBL_TEMPLATE=True, MYKEY=3,
+                   PCA2D=dict(n_star=1, n_earth=7, star_bias_nsig=10.0))
+    text = wrapgen.render(rparams, "demo")
+    # every setting has its comment, and the comments do not get in the way
+    assert "# the folders of science/ to measure" in text
+    assert "# the bias test (bias_nsig) in the star's frame" in text
+    path = tmp_path / "wrap.py"
+    path.write_text(text)
+    back = wrapload.read(str(path))
+    found = back.get("rparams", back)
+    assert found["OBJECT_COMPARISON"] == ["VETTED_GJ411"]
+    assert found["PCA2D"]["star_bias_nsig"] == 10.0
+    assert found["MYKEY"] == 3
