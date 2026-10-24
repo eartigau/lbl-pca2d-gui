@@ -962,17 +962,21 @@ OPTIONS = {
          " by its own shift, a star column where more than this fraction of"
          " the exposures was clipped (and whose survivors are still above"
          " the chi² below) is blanked wherever it falls, in every exposure."
-         " It catches what stands still on the star: another star's"
-         " template, or a narrow BERV range. Off (unset) until measured on"
+         " It catches what stands still on the star, as a narrow BERV range"
+         " leaves it. Measured against another star's template, the static"
+         " difference between the two stars (their metallicity) is expected"
+         " and is taken out before this test. Off (unset) until measured on"
          " more stars than KIC 7847566.",
          "Le test des colonnes ci-dessus, dans le référentiel de l'étoile :"
          " chaque pose portée par son propre décalage, une colonne de"
          " l'étoile où plus de cette fraction des poses a été coupée (et"
          " dont les poses restantes dépassent encore le chi² suivant) est"
          " masquée là où elle tombe, dans toutes les poses. Il attrape ce"
-         " qui reste immobile sur l'étoile : le template d'une autre étoile,"
-         " ou un intervalle de BERV étroit. Désactivé (vide) tant qu'il n'a"
-         " pas été mesuré sur d'autres étoiles que KIC 7847566.")),
+         " qui reste immobile sur l'étoile, comme le laisse un intervalle de"
+         " BERV étroit. Mesurée contre le template d'une autre étoile,"
+         " la différence statique entre les deux étoiles (leur métallicité)"
+         " est attendue et retirée avant ce test. Désactivé (vide) tant"
+         " qu'il n'a pas été mesuré sur d'autres étoiles que KIC 7847566.")),
     "star_column_chi2": (
         ("star frame: chi2", "référentiel de l'étoile : chi2"),
         ("The second condition of the star-frame column test: the reduced"
