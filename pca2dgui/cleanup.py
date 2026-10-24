@@ -5,7 +5,7 @@ Every product is put in one kind, which says what deleting it costs:
 
     scratch      remade without being asked, by the next run that needs it
                  (PCA2D's registered cubes)
-    rebuildable  remade by running again, in minutes to hours (superseded
+    rebuildable  remade by running again, in minutes (superseded
                  corrections, corrected and telluric-cleaned spectra, LBL's
                  per-exposure velocities, templates, masks)
     results      what a run is for: kept (rdb tables, reports, observer
@@ -58,7 +58,7 @@ WHAT = dict(
     corrected="corrected spectra (remade from the fit; tar them first if"
               " they are someone's)",
     cleaned="telluric-cleaned spectra",
-    lblrv="LBL's per-exposure velocities (hours)",
+    lblrv="LBL's per-exposure velocities (about ten minutes)",
     template="an LBL template",
     mask="an LBL mask",
     rdb="LBL's velocity tables",
