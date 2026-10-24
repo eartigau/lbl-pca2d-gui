@@ -1225,7 +1225,7 @@ async function queue() {
 }
 
 async function saveWrap(overwrite) {
-  const data = await api.post('/api/save_wrap', { data_dir: S.data_dir, name: S.name, wrap: $('wrap_text').value, overwrite });
+  const data = await api.post('/api/save_wrap', { data_dir: S.data_dir, name: S.name, wrap: $('wrap_text').value, state: buildState(), overwrite });
   if (data.exists && !overwrite) {
     if (await confirmBox(t('overwrite_q', data.path || data.error))) saveWrap(true);
     return;

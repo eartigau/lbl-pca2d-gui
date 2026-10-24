@@ -370,8 +370,16 @@ class Handler(BaseHTTPRequestHandler):
                 if os.path.exists(path) and not body.get("overwrite"):
                     return self._json(dict(error="%s exists" % path,
                                            exists=True), HTTPStatus.CONFLICT)
+                # the window's own wrap is written commented and current,
+                #   a wrap edited by hand as it is (wrapgen.window_text)
+                text = body.get("wrap", "")
+                if body.get("state"):
+                    built = wrapgen.build(body["state"])
+                    text = wrapgen.window_text(
+                        text, built["rparams"], body.get("name", ""),
+                        body["state"].get("python") or sys.executable)
                 with open(path, "w") as handle:
-                    handle.write(body.get("wrap", ""))
+                    handle.write(text)
                 os.chmod(path, 0o755)
                 return self._json(dict(path=path))
             if route == "/api/load_wrap":
@@ -417,8 +425,8 @@ class Handler(BaseHTTPRequestHandler):
         data_dir = self.ctx.allow(state.get("data_dir", ""))
         name = body.get("name") or suggest_name(state, built["rparams"])
         python = state.get("python") or sys.executable
-        text = body.get("wrap") or wrapgen.render(built["rparams"], name,
-                                                  python)
+        text = wrapgen.window_text(body.get("wrap"), built["rparams"], name,
+                                   python)
         job_id = runner.new_id(name)
         folder = os.path.join(data_dir, history.GUI_RUNS, job_id)
         os.makedirs(folder, exist_ok=True)
@@ -432,9 +440,8 @@ class Handler(BaseHTTPRequestHandler):
                  instrument=built["rparams"].get("INSTRUMENT"),
                  pca2d=built["rparams"].get("PCA2D"),
                  steps=wrapgen.steps(built["rparams"]),
-                 edited=bool(body.get("wrap"))
-                 and body.get("wrap") != wrapgen.render(
-                     built["rparams"], name, python)),
+                 edited=text != wrapgen.render(built["rparams"], name,
+                                               python)),
             job_id=job_id)
         return self._json(job.summary())
 

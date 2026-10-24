@@ -67,3 +67,18 @@ def test_the_commented_wrap_reads_back(tmp_path):
     assert found["OBJECT_COMPARISON"] == ["VETTED_GJ411"]
     assert found["PCA2D"]["star_bias_nsig"] == 10.0
     assert found["MYKEY"] == 3
+
+
+def test_an_old_window_wrap_is_written_commented():
+    # the page can post a wrap made before the comments were: same values,
+    #   so the window's own, commented, is written; one edited by hand stays
+    rparams = dict(INSTRUMENT="SPIROU", DATA_SOURCE="CADC", DATA_DIR="/x",
+                   DATA_TYPES=["SCIENCE"], OBJECT_SCIENCE=["A"],
+                   OBJECT_COMPARISON=["A"], OBJECT_TEFF=[3500],
+                   PCA2D=dict(n_star=1, n_earth=7))
+    bare = "\n".join(line for line in wrapgen.render(rparams, "x").splitlines()
+                     if not line.strip().startswith("#"))
+    out = wrapgen.window_text(bare, rparams, "x")
+    assert "# the folders of science/ to measure" in out
+    edited = bare.replace("n_earth=7", "n_earth=5")
+    assert wrapgen.window_text(edited, rparams, "x") == edited

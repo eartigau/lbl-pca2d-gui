@@ -81,7 +81,12 @@ def read(path: str) -> dict:
     """A wrap's run parameters: dict(rparams, skipped), `skipped` the keys
     whose value is computed rather than written."""
     with open(path) as handle:
-        tree = ast.parse(handle.read(), filename=path)
+        return read_text(handle.read(), path)
+
+
+def read_text(text: str, filename: str = "<wrap>") -> dict:
+    """read, on a wrap's text."""
+    tree = ast.parse(text, filename=filename)
     reader = _Reader()
     reader.visit(tree)
     return dict(rparams=reader.rparams, skipped=reader.skipped)

@@ -333,6 +333,26 @@ def _option_comment(key: str) -> str:
     return first
 
 
+def window_text(posted: str, rparams: dict, name: str = "",
+                python: str = "") -> str:
+    """The wrap to write, run or saved: the window's own, commented and
+    current, when the text the page posts reads back to these very run
+    parameters (the page can hold a wrap written before the comments were:
+    a run saved without them on 2026-10-24); the posted text as it is when
+    it was edited by hand."""
+    import json
+    from .wrapload import read_text
+    fresh = render(rparams, name, python)
+    if not posted:
+        return fresh
+    try:
+        found = read_text(posted)["rparams"]
+    except (SyntaxError, ValueError):
+        return posted
+    same = lambda d: json.dumps(d, sort_keys=True, default=str)
+    return fresh if same(found) == same(rparams) else posted
+
+
 def render(rparams: dict, name: str = "", python: str = "") -> str:
     """The wrap.py of these run parameters, commented."""
     python = python or sys.executable
