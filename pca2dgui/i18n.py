@@ -348,7 +348,7 @@ FR = {
     "col_teff": "Teff (K)",
     "all": "toutes",
     "none": "aucune",
-    "ticked": "%s cochées sur %s",
+    "ticked": "cochées : %s sur %s",
     "joint_note": "plusieurs cibles cochées : un seul fit joint si « joint » est activé (Réglages)",
     "plot_berv": "Couverture en BERV",
     "plot_berv_hint": "spectres par tranche de 3 km/s de vitesse barycentrique, empilés par cible : les deux référentiels ne se séparent qu'autant que le BERV varie",

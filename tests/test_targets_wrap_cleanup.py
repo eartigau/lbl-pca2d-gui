@@ -122,7 +122,9 @@ def test_a_wrap_says_what_was_chosen_and_runs(data_dir):
     rparams = built["rparams"]
     assert rparams["OBJECT_SCIENCE"] == ["STAR"]
     assert rparams["OBJECT_COMPARISON"] == ["STAR"]
-    assert rparams["PCA2D"] == dict(n_earth=5)
+    # n_star and n_earth always written (the fit's folder is named after
+    #   them), the rest only when it differs from the default
+    assert rparams["PCA2D"] == dict(n_star=1, n_earth=5)
     text = wrapgen.render(rparams, "test")
     compile(text, "wrap.py", "exec")
     assert "lbl_wrap.main(rparams)" in text
@@ -270,5 +272,6 @@ def test_a_wrap_loaded_and_written_again_keeps_what_it_said(data_dir, tmp_path):
     state["targets"] = state["ticked"]
     rparams = wrapgen.build(state)["rparams"]
     assert rparams["INPUT_FILE"] == "*t.fits"
-    assert rparams["PCA2D"] == {"input_name": "b", "mask_share": 0.5,
+    assert rparams["PCA2D"] == {"n_star": 1, "n_earth": 3,
+                                "input_name": "b", "mask_share": 0.5,
                                 "twoframe": {"iters": 4}}

@@ -190,6 +190,11 @@ def build(state: dict) -> dict:
         pca2d = dict()
         for key, row in options.items():
             if key not in chosen:
+                # n_star and n_earth are always written, their defaults when
+                #   the window left them: the fit's folder is named after
+                #   them (a fresh window named its run s<None>-o<None>)
+                if key in ALWAYS and row["default"] is not None:
+                    pca2d[key] = row["default"]
                 continue
             try:
                 value = _coerce(chosen[key], row["kind"])

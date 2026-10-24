@@ -99,6 +99,9 @@ def suggest_name(state: dict, rparams: dict) -> str:
     stem += "_s%s-o%s" % (pca2d.get("n_star"), pca2d.get("n_earth"))
     if pca2d.get("input_name"):
         stem += "_" + str(pca2d["input_name"])
+    # the variant's own name, which its corrected spectra carry too
+    if pca2d.get("name"):
+        stem += "_" + str(pca2d["name"])
     return stem
 
 

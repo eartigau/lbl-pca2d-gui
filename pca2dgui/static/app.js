@@ -853,7 +853,12 @@ function drawTimeline(names) {
     const mjd = (Date.UTC(y, 0, 1) / 86400000) + 40587;
     if (mjd >= lo && mjd <= hi) years.push(mjd);
   }
-  const marks = years.length >= 2 ? years : ticks(lo, hi, 4);
+  // every year when they fit, else every 2nd, 5th or 10th: a label is
+  //   about 32 px wide (21 years of Gliese 229 ran into one another)
+  const room = inner.x1 - inner.x0;
+  const every = [1, 2, 5, 10, 20].find((k) => (years.length / k) * 32 <= room) || 50;
+  const shown = years.filter((m) => Number(mjdDate(m).slice(0, 4)) % every === 0);
+  const marks = years.length >= 2 ? (shown.length >= 2 ? shown : years) : ticks(lo, hi, 4);
   axes(root, inner, marks, [], xscale, () => 0, years.length >= 2 ? '' : 'RJD', (v) => (years.length >= 2 ? mjdDate(v).slice(0, 4) : `${Math.round(v + 0.5)}`));
   if (S.min_rjd !== null && S.min_rjd !== '' && S.min_rjd > lo) root.append(svg('rect', { x: inner.x0, width: xscale(S.min_rjd) - inner.x0, y: inner.y0, height: inner.y1 - inner.y0, fill: 'rgba(255,255,255,0.05)' }));
   if (S.max_rjd !== null && S.max_rjd !== '' && S.max_rjd < hi) root.append(svg('rect', { x: xscale(S.max_rjd), width: inner.x1 - xscale(S.max_rjd), y: inner.y0, height: inner.y1 - inner.y0, fill: 'rgba(255,255,255,0.05)' }));
