@@ -454,8 +454,17 @@ def steps(rparams: dict) -> list:
     fitted = False
     for target in targets:
         obj = target
+        # the telluric cleaning in its three steps (lbl_wrap): a first pass
+        #   blind, a template of its cleaned spectra, a second pass of the
+        #   spectra as delivered divided by that template; all three under
+        #   the target's name (group), each with its own label
         if tellu:
-            out.append(dict(kind="telluclean", obj=target))
+            out.append(dict(kind="telluclean", obj=target,
+                            label="step_telluclean_1"))
+            out.append(dict(kind="template", obj=target + "_tc", group=target,
+                            label="step_template_tc"))
+            out.append(dict(kind="telluclean", obj=target,
+                            label="step_telluclean_2"))
             obj = target + "_tc"
         if not on:
             lbl(obj)

@@ -115,6 +115,33 @@ def _line(text, level="I"):
     return "\x1b[94;1m2026-10-23 12:33:37.953|%s| %s\x1b[0;0m" % (level, text)
 
 
+def test_the_telluric_cleaning_shows_its_two_passes(tmp_path):
+    from pca2dgui import wrapgen
+    rparams = dict(OBJECT_SCIENCE=["GJ1214"], RUN_LBL_TELLUCLEAN=True,
+                   RUN_LBL_TEMPLATE=True, RUN_LBL_MASK=True,
+                   RUN_LBL_COMPUTE=True, RUN_LBL_COMPILE=True, REPORT=True)
+    steps = wrapgen.steps(rparams)
+    assert [(s["kind"], s["obj"], s.get("label")) for s in steps[:5]] == [
+        ("telluclean", "GJ1214", "step_telluclean_1"),
+        ("template", "GJ1214_tc", "step_template_tc"),
+        ("telluclean", "GJ1214", "step_telluclean_2"),
+        ("template", "GJ1214_tc", None), ("mask", "GJ1214_tc", None)]
+    # the log of lbl_wrap: the blind pass, its template, the second pass,
+    #   then LBL's own template
+    job = runner.Job("x", "x", str(tmp_path), "wrap.py", "python",
+                     str(tmp_path), dict(steps=steps))
+    for text in ("\tLBL Tellu Clean", '\tOBJECT_SCIENCE="GJ1214"',
+                 "\tLBL Template", '\tOBJECT_SCIENCE="GJ1214_tc"',
+                 "\tLBL Tellu Clean", '\tOBJECT_SCIENCE="GJ1214"'):
+        job.add(_line(text), False)
+    assert [s["state"] for s in job.steps[:4]] == [
+        "done", "done", "running", "pending"]
+    for text in ("\tLBL Template", '\tOBJECT_SCIENCE="GJ1214_tc"'):
+        job.add(_line(text), False)
+    assert [s["state"] for s in job.steps[:5]] == [
+        "done", "done", "done", "running", "pending"]
+
+
 def test_the_steps_tick_off_as_the_log_goes(tmp_path):
     from pca2dgui import wrapgen
     rparams = dict(OBJECT_SCIENCE=["TOI904"], RUN_LBL_TELLUCLEAN=False,

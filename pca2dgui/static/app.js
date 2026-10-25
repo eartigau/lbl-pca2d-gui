@@ -1222,10 +1222,13 @@ function drawSteps(steps, title) {
   const holder = $('steps');
   $('steps_note').textContent = title || t('steps_planned');
   const groups = [];
+  // group: the name a step is shown under, when not its object's (the
+  //   template between the two telluric passes, under the target's)
   (steps || []).forEach((step) => {
     const last = groups[groups.length - 1];
-    if (last && last.obj === step.obj) last.steps.push(step);
-    else groups.push({ obj: step.obj, steps: [step] });
+    const under = step.group || step.obj;
+    if (last && last.obj === under) last.steps.push(step);
+    else groups.push({ obj: under, steps: [step] });
   });
   holder.replaceChildren(...groups.map((group) => el('div', { class: 'step-group' },
     el('span', { class: 'step-obj mono', text: group.obj }),
@@ -1236,7 +1239,7 @@ function drawSteps(steps, title) {
     },
       step.state === 'running' ? el('span', { class: 'ring' })
         : el('span', { class: 'step-icon', text: STEP_ICON[step.state || 'pending'] }),
-      t(`step_${step.kind}`))))));
+      t(step.label || `step_${step.kind}`))))));
 }
 
 // ── the wrap, with Python's colours ─────────────────────────────────────
