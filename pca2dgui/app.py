@@ -156,6 +156,10 @@ class Handler(BaseHTTPRequestHandler):
             if route in ("/", "/index.html"):
                 return self._file(os.path.join(STATIC, "index.html"),
                                   "text/html; charset=utf-8")
+            if route == "/favicon.ico":
+                # asked by browsers whatever the page says
+                return self._file(os.path.join(STATIC, "favicon-32.png"),
+                                  "image/png")
             if route.startswith("/static/"):
                 name = os.path.basename(route)
                 path = os.path.join(STATIC, name)
