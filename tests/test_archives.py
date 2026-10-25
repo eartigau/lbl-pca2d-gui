@@ -54,6 +54,10 @@ def test_a_fetch_adds_and_says_where_from(tmp_path):
     origin = json.loads((keep / archives.ARCHIVE_FILE).read_text())
     assert origin["lbl"] == "NIRPS_HE" and origin["source"] == "ESO"
     assert origin["teff"] == 3478.0
+    # the bar's times, that its time left and its duration are read from
+    status = box.status()
+    bar = status["fetch"]["bars"][0]
+    assert bar["started"] <= bar["ended"] <= status["now"]
 
 
 def test_the_wrap_takes_the_reader_of_a_fetched_folder(tmp_path):

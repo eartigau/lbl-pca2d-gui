@@ -502,9 +502,11 @@ class Archives:
         said = "%s, %s" % (row.get("target"), row["label"])
         todo = [one for one in group["spectra"]
                 if not os.path.exists(os.path.join(science, one["name"]))]
+        # started: the bar's time left, from how fast it has gone so far
         with self.lock:
             self.fetch["bars"][index].update(folder=row["folder"],
-                                             total=len(todo))
+                                             total=len(todo),
+                                             started=time.time())
             going = [b for b in self.fetch["bars"]
                      if b["done"] < b["total"]]
             self.fetch["current"] = ", ".join(
@@ -539,6 +541,8 @@ class Archives:
 
         with ThreadPoolExecutor(max_workers=WORKERS) as pool:
             list(pool.map(get, todo))
+        with self.lock:
+            self.fetch["bars"][index]["ended"] = time.time()
         with open(os.path.join(science, ARCHIVE_FILE), "w") as handle:
             json.dump(dict(target=row.get("target"), inst=row["inst"],
                            lbl=row["lbl"], source=row["source"],
@@ -551,7 +555,9 @@ class Archives:
 
     def status(self) -> dict:
         with self.lock:
+            # now: the server's clock, that the bars' times are read against
             return json.loads(json.dumps(dict(search=self.search,
                                               fetch=self.fetch,
+                                              now=time.time(),
                                               log=self.log[-LOG_SENT:],
                                               koloa=available())))

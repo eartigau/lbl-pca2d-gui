@@ -1,8 +1,9 @@
 """static/references.json, what the References tab shows: the paper that
-describes LBL, with its BibTeX, and the papers whose velocities LBL measured
-(tools/lbl_references.yaml, read paper by paper), each with the sentence
-that says so. Their authors, journal, volume and page come from CrossRef
-(by DOI, found with OpenAlex), else from the arXiv record.
+describes LBL and the papers whose velocities LBL measured
+(tools/lbl_references.yaml, read paper by paper, with the sentence that
+says so), each as its title, its first authors and its link to ADS. The
+authors come from CrossRef (by DOI, found with OpenAlex), else from the
+arXiv record.
 
     python tools/lbl_references.py <folder with meta/papers.json,
                                     meta/citing_biblio.json, meta/lbl_biblio.json>
@@ -21,10 +22,6 @@ import yaml
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(HERE, "..", "pca2dgui", "static")
 UA = {"User-Agent": "lbl-gui-references/1.0 (personal research tool)"}
-#: the instruments a paper's LBL sentences name, for the tab's filter
-INSTRUMENTS = ("SPIRou", "NIRPS", "HARPS-N", "HARPS", "ESPRESSO", "CARMENES",
-               "SOPHIE", "MAROON-X", "NEID", "EXPRES", "ESPaDOnS", "CORALIE",
-               "IRD", "HPF", "iSHELL", "GIANO")
 
 
 def get_json(url):
@@ -41,15 +38,26 @@ def crossref(doi):
         return None
 
 
+#: the authors named, the others as et al.
+AUTHORS_SHOWN = 3
+
+
 def authors_short(families):
     families = [f for f in families if f]
     if not families:
         return "?"
+    if len(families) > AUTHORS_SHOWN:
+        return "%s et al." % ", ".join(families[:AUTHORS_SHOWN])
     if len(families) == 1:
         return families[0]
-    if len(families) == 2:
-        return "%s & %s" % tuple(families)
-    return "%s et al." % families[0]
+    return "%s & %s" % (", ".join(families[:-1]), families[-1])
+
+
+def ads(arxiv, doi):
+    """A paper's ADS page: ADS finds a paper by its arXiv id or its DOI in
+    place of its bibcode (the bibcode needs the ADS API and a token)"""
+    return "https://ui.adsabs.harvard.edu/abs/%s/abstract" % (
+        "arXiv:" + arxiv if arxiv else doi)
 
 
 def openalex_of(arxiv, title, works):
@@ -66,9 +74,16 @@ def openalex_of(arxiv, title, works):
     return None
 
 
+def licence_name(url):
+    """'CC BY 4.0', 'CC0 1.0' of a Creative Commons licence's URL"""
+    parts = url.rstrip("/").split("/")
+    if "zero" in parts:
+        return "CC0 " + parts[-1]
+    return "CC %s %s" % (parts[-2].upper(), parts[-1])
+
+
 def describe(arxiv, title, work, year):
-    """A paper's entry: authors, year, title, journal, volume, page, DOI,
-    arXiv"""
+    """A paper's entry: authors, year, title, DOI, arXiv, its ADS page"""
     doi = (work or {}).get("doi") or ""
     doi = doi.replace("https://doi.org/", "") or None
     # an arXiv DOI is not the journal's
@@ -78,9 +93,6 @@ def describe(arxiv, title, work, year):
     meta = crossref(doi) if doi else None
     if meta:
         out["authors"] = authors_short([a.get("family") for a in meta.get("author", [])])
-        out["journal"] = html.unescape((meta.get("container-title") or [""])[0])
-        out["volume"] = meta.get("volume")
-        out["page"] = meta.get("article-number") or meta.get("page")
         # a series' papers carry the series as title, their own as subtitle
         #   ("The GAPS Programme at TNG" alone)
         full = (meta.get("title") or [title])[0]
@@ -92,27 +104,8 @@ def describe(arxiv, title, work, year):
     else:
         names = [(a.get("author") or {}).get("display_name") for a in (work or {}).get("authorships", [])]
         out["authors"] = authors_short([n.split()[-1] if n else n for n in names])
-        out["journal"] = "arXiv preprint"
+    out["ads"] = ads(arxiv, doi)
     return out
-
-
-def bibtex(meta, arxiv):
-    """The method's BibTeX, from CrossRef"""
-    names = " and ".join("{%s}, %s" % (a["family"], a.get("given", ""))
-                         for a in meta["author"])
-    return "\n".join([
-        "@ARTICLE{Artigau2022,",
-        "       author = {%s}," % names,
-        '        title = "{%s}",' % meta["title"][0],
-        "      journal = {%s}," % meta["container-title"][0],
-        "         year = %d," % meta["issued"]["date-parts"][0][0],
-        "       volume = {%s}," % meta["volume"],
-        "       number = {%s}," % meta.get("issue", ""),
-        "          eid = {%s}," % (meta.get("article-number") or meta.get("page")),
-        "          doi = {%s}," % meta["DOI"],
-        "archivePrefix = {arXiv},",
-        "       eprint = {%s}," % arxiv,
-        "}"])
 
 
 def main(folder):
@@ -126,7 +119,6 @@ def main(folder):
     method_arxiv = str(chosen["method"])
     method = describe(method_arxiv, lbl_work["title"], lbl_work,
                       lbl_work["publication_year"])
-    method_meta = crossref(method["doi"])
 
     out, seen = [], set()
     for row in chosen["listed"]:
@@ -146,16 +138,8 @@ def main(folder):
                              doi="https://doi.org/" + doi)
         entry = describe(arxiv, rec.get("title") or (work or {}).get("title"),
                          work, rec.get("year") or (work or {}).get("publication_year"))
-        entry["evidence"] = row["evidence"]
-        if row.get("role"):
-            entry["role"] = row["role"]
-        text = " ".join([entry["title"]] + rec.get("contexts", []))
-        entry["instruments"] = [i for i in INSTRUMENTS
-                                if re.search(r"\b%s\b" % re.escape(i), text, re.I)
-                                and not (i == "HARPS" and re.search(r"HARPS-N", text)
-                                         and not re.search(r"HARPS(?!-N)", text))]
         out.append(entry)
-        print("%s %s %s" % (entry["year"], entry["authors"], entry["journal"]))
+        print("%s %s" % (entry["year"], entry["authors"]))
     out.sort(key=lambda e: (-int(e["year"] or 0), e["authors"]))
 
     credits = []
@@ -165,14 +149,11 @@ def main(folder):
         for c in json.load(open(path)):
             e = listed.get(c["arxiv"])
             # one line per paper, however many of its figures are used
-            if e and all(k["arxiv"] != e["arxiv"] for k in credits):
+            if e and all(k["ads"] != e["ads"] for k in credits):
                 credits.append(dict(authors=e["authors"], year=e["year"],
-                                    title=e["title"], doi=e.get("doi"),
-                                    arxiv=e["arxiv"],
-                                    licence="CC " + c["licence"].rstrip("/")
-                                    .split("/licenses/")[-1].replace("/", " ").upper()))
+                                    title=e["title"], ads=e["ads"],
+                                    licence=licence_name(c["licence"])))
     result = dict(updated=datetime.date.today().isoformat(), method=method,
-                  bibtex=bibtex(method_meta, method_arxiv) if method_meta else "",
                   papers=out, credits=credits)
     with open(os.path.join(STATIC, "references.json"), "w") as handle:
         json.dump(result, handle, indent=1, ensure_ascii=False)

@@ -109,7 +109,11 @@ function when(seconds) {
 }
 function took(start, end) {
   if (!start) return '';
-  const total = Math.round(((end || Date.now() / 1000) - start));
+  return span((end || Date.now() / 1000) - start);
+}
+/* a duration in seconds, as 1 h 05 min, 3 min 20 s or 12 s */
+function span(seconds) {
+  const total = Math.round(seconds);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
@@ -238,57 +242,25 @@ async function loadRefs() {
   }
   drawRefs();
 }
-function refLinks(ref) {
-  const links = [];
-  if (ref.doi) links.push(el('a', { href: `https://doi.org/${ref.doi}`, target: '_blank', rel: 'noopener', text: 'DOI' }));
-  if (ref.arxiv) links.push(el('a', { href: `https://arxiv.org/abs/${ref.arxiv}`, target: '_blank', rel: 'noopener', text: 'arXiv' }));
-  return links;
-}
-function refItem(ref, withWhy) {
-  const where = [ref.journal, ref.volume, ref.page].filter(Boolean).join(', ');
+/* a paper: its title, its authors and year, its ADS page */
+function refItem(ref) {
   return el('div', { class: 'ref' },
-    // the instruments its LBL sentences name are searched, not shown: a
-    //   sentence can name one LBL did not measure
-    el('div', { class: 'ref-head' },
-      el('span', { class: 'ref-authors', text: `${ref.authors} (${ref.year})` }),
-      ref.role ? el('span', { class: 'chip ref-role', text: t(`refs_role_${ref.role}`) }) : null),
     el('div', { class: 'ref-title', text: ref.title }),
-    el('div', { class: 'ref-meta small' }, el('span', { class: 'muted', text: where }), ...refLinks(ref)),
-    withWhy && ref.evidence ? el('details', { class: 'ref-why small' },
-      el('summary', { text: t('refs_why') }),
-      el('blockquote', { text: ref.evidence })) : null);
+    el('div', { class: 'ref-meta small' },
+      el('span', { text: `${ref.authors} (${ref.year})` }),
+      ref.ads ? el('a', { href: ref.ads, target: '_blank', rel: 'noopener', text: 'ADS' }) : null));
 }
 function drawRefs() {
   if (!REFS) return;
-  $('refs_method').replaceChildren(REFS.method ? refItem(REFS.method, false) : el('span', { class: 'muted', text: '-' }));
-  $('refs_bibtex').textContent = REFS.bibtex || '';
-  const words = ($('refs_filter').value || '').toLowerCase().split(/\s+/).filter(Boolean);
-  const papers = (REFS.papers || []).filter((ref) => {
-    const text = [ref.authors, ref.title, ref.journal, ref.year, ...(ref.instruments || []), ref.evidence].join(' ').toLowerCase();
-    return words.every((w) => text.includes(w));
-  });
-  $('refs_title').textContent = t('refs_used', (REFS.papers || []).length);
+  $('refs_method').replaceChildren(REFS.method ? refItem(REFS.method) : el('span', { class: 'muted', text: '-' }));
+  const papers = REFS.papers || [];
+  $('refs_title').textContent = t('refs_used', papers.length);
   $('refs_hint').textContent = t('refs_used_hint', REFS.updated || '-');
-  const years = [...new Set(papers.map((ref) => ref.year))].sort((a, b) => b - a);
-  $('refs_list').replaceChildren(...(papers.length ? years.map((year) => el('div', { class: 'ref-year' },
-    el('h3', { class: 'ref-year-title', text: String(year) }),
-    ...papers.filter((ref) => ref.year === year).map((ref) => refItem(ref, true))))
-    : [el('p', { class: 'muted', text: t('refs_none') })]));
+  $('refs_list').replaceChildren(...papers.map((ref) => refItem(ref)));
   $('refs_credits').replaceChildren(...(REFS.credits || []).map((c) => el('li', {},
     el('span', { text: `${c.authors} (${c.year}), ` }), el('em', { text: c.title }), ' ',
-    el('span', { class: 'muted', text: `[${c.licence}] ` }), ...refLinks(c))));
-}
-async function copyBibtex() {
-  try {
-    await navigator.clipboard.writeText(REFS && REFS.bibtex ? REFS.bibtex : '');
-    $('refs_copy').textContent = t('refs_copied');
-    setTimeout(() => { $('refs_copy').textContent = t('refs_copy'); }, 1600);
-  } catch (error) {
-    const range = document.createRange();
-    range.selectNodeContents($('refs_bibtex'));
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-  }
+    el('span', { class: 'muted', text: `[${c.licence}]` }),
+    c.ads ? el('a', { href: c.ads, target: '_blank', rel: 'noopener', text: 'ADS' }) : null)));
 }
 
 // ── the targets' sub-tabs ───────────────────────────────────────────────
@@ -425,7 +397,7 @@ function drawArchive() {
     const share = bar.total ? Math.min(100, (100 * bar.done) / bar.total) : 100;
     const whose = bar.target || search.main || search.target || '';
     return el('div', { class: 'bar-row' },
-      el('div', { class: 'bar-text small', text: t('archive_progress', `${bar.label} ${whose} (science/${bar.folder})`, bar.done, bar.total, bar.failed) }),
+      el('div', { class: 'bar-text small', text: t('archive_progress', `${bar.label} ${whose} (science/${bar.folder})`, bar.done, bar.total, bar.failed) + barTime(bar, ARCHIVE.now) }),
       el('div', { class: 'bar' }, el('div', { class: `bar-fill${bar.failed ? ' with-failed' : ''}`, style: `width:${share.toFixed(1)}%` })));
   }));
   if (fetch.state === 'running') {
@@ -435,6 +407,20 @@ function drawArchive() {
   } else {
     $('archive_progress').textContent = '';
   }
+}
+
+/* a fetch bar's time: how long it took, or how long it has left at the
+   pace it has gone so far (said once a few spectra are in, a first
+   estimate being off: four files go at once) */
+function barTime(bar, now) {
+  if (!bar.started) return bar.total && !bar.done ? ` · ${t('archive_waiting')}` : '';
+  if (bar.ended) return ` · ${t('archive_took', took(bar.started, bar.ended))}`;
+  const spent = (now || Date.now() / 1000) - bar.started;
+  if (bar.done < 4 || spent < 5) return ` · ${t('archive_left', '...')}`;
+  // an estimate: to 5 s, then to the minute
+  const left = (spent * (bar.total - bar.done)) / bar.done;
+  const said = left < 60 ? `${Math.max(5, Math.round(left / 5) * 5)} s` : left < 3600 ? `${Math.round(left / 60)} min` : span(left);
+  return ` · ${t('archive_left', said)}`;
 }
 
 async function archiveFetch() {
@@ -1368,6 +1354,11 @@ async function pollQueue() {
     if (running) selectJob(running.id);
   }
   updateLaunch(jobs.find((j) => j.state === 'running'));
+  // the Runs tab follows the queue: read again as a run is queued, starts
+  //   or ends, and every 10 s while one goes (its duration)
+  const runsNow = [S.data_dir, ...jobs.map((j) => `${j.id}:${j.state}`)].join(' ');
+  if (S.tab === 'runs' && (runsNow !== runsSeen || (jobs.some((j) => j.state === 'running') && Date.now() - runsRead > 10000))) loadRuns();
+  runsSeen = runsNow;
   const job = jobs.find((j) => j.id === selectedJob);
   if (job && job.steps && job.steps.length) drawSteps(job.steps, t('steps_of', job.name));
   else drawSteps(plannedSteps);
@@ -1454,8 +1445,11 @@ function table(holder, head, rows) {
     el('tbody', {}, rows.length ? rows : el('tr', {}, el('td', { colspan: head.length, class: 'muted', text: t('nothing') }))));
 }
 
+let runsSeen = '';
+let runsRead = 0;
 async function loadRuns() {
   if (!S.data_dir) return;
+  runsRead = Date.now();
   const data = await api.get('/api/runs', { data_dir: S.data_dir });
   table($('runs_window'), ['col_name', 'col_state', 'col_started', 'col_duration', 'col_reports', 'log'],
     (data.window || []).map((run) => el('tr', {},
@@ -1586,8 +1580,6 @@ async function init() {
   $('save_wrap').onclick = () => saveWrap(false);
   $('stop').onclick = stopJob;
   $('overwrite_all').onchange = (event) => setOverwrite(event.target.checked);
-  $('refs_copy').onclick = copyBibtex;
-  $('refs_filter').oninput = drawRefs;
   // to the top: the log stops following the run; to the bottom: it follows again
   for (const id of ['log', 'archive_log']) {
     $(`${id}_top`).onclick = () => { $(id).scrollTop = 0; };

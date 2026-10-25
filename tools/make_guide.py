@@ -486,8 +486,8 @@ bornes peuvent limiter le fit PCA2D à une période.</p>
     archive_en = """
 <h3>Archive search</h3>
 <p>With koloa installed, the second sub-tab finds a star's public spectra
-that LBL reads and fetches them into <code>science/</code>, one file at a
-time. It never moves or overwrites a file that is there; a folder fetched
+that LBL reads and fetches them into <code>science/</code>, four files at a
+time, each folder with how far it is and its time left. It never moves or overwrites a file that is there; a folder fetched
 from an archive remembers where it came from
 (<code>.lbl_archive.json</code>), and the window sets the instrument, the
 data source and the file pattern from it.</p>
@@ -496,7 +496,8 @@ data source and the file pattern from it.</p>
 <h3>Recherche d'archive</h3>
 <p>Avec koloa installé, le second sous-onglet trouve les spectres publics
 d'une étoile que LBL sait lire et les récupère dans <code>science/</code>,
-un fichier à la fois. Il ne déplace ni n'écrase jamais un fichier déjà là ;
+quatre fichiers à la fois, chaque dossier avec où il en est et le temps qui
+lui reste. Il ne déplace ni n'écrase jamais un fichier déjà là ;
 un dossier récupéré d'une archive garde sa provenance
 (<code>.lbl_archive.json</code>), d'où la fenêtre tire l'instrument, la
 source de données et le motif de fichiers.</p>
@@ -619,8 +620,9 @@ nouveau. <em>Arrêter</em> arrête le run.</p>
 
     others_en = """
 <p><strong>Runs.</strong> The runs made from the window (name, state, start,
-duration, the reports they wrote) and every report of the data folder,
-made from the window or from a terminal.</p>
+duration, the reports they wrote), kept up to date as runs start and end,
+and every report of the data folder, made from the window or from a
+terminal.</p>
 <p><strong>Cleanup.</strong> What the data folder's products weigh, each in
 one kind that says what deleting it costs: <em>scratch</em> (remade by the
 next run that needs it, such as PCA2D's cubes), <em>rebuildable</em> (remade
@@ -628,14 +630,15 @@ by running again: superseded corrections, corrected spectra, per-exposure
 velocities, templates, masks), <em>results</em> (rdb tables, reports,
 observer bases: kept) and <em>spectra</em> (never touched). Only the first
 two can be deleted, and only inside the data folder.</p>
-<p><strong>References.</strong> The paper that describes LBL, with its
-BibTeX, and the papers whose velocities LBL measured, each with the sentence
-of the paper that says so.</p>
+<p><strong>References.</strong> The paper that describes LBL, then a list,
+not exhaustive, of the papers that used our codes: each one's title, its
+authors and its page on ADS.</p>
 """
     others_fr = """
 <p><strong>Runs.</strong> Les runs lancés depuis la fenêtre (nom, état,
-début, durée, les rapports qu'ils ont écrits) et tous les rapports du
-dossier de données, faits depuis la fenêtre ou depuis un terminal.</p>
+début, durée, les rapports qu'ils ont écrits), tenus à jour à mesure que
+les runs commencent et finissent, et tous les rapports du dossier de
+données, faits depuis la fenêtre ou depuis un terminal.</p>
 <p><strong>Ménage.</strong> Ce que pèsent les produits du dossier, chacun
 rangé dans une catégorie qui dit ce que coûte sa suppression :
 <em>jetable</em> (refait par le prochain run qui en a besoin, comme les
@@ -644,9 +647,9 @@ remplacées, spectres corrigés, vitesses par pose, templates, masques),
 <em>résultats</em> (tables rdb, rapports, bases de l'observateur : gardés)
 et <em>spectres</em> (jamais touchés). Seules les deux premières se
 suppriment, et seulement dans le dossier de données.</p>
-<p><strong>Références.</strong> L'article qui décrit LBL, avec son BibTeX,
-et les articles dont LBL a mesuré les vitesses, chacun avec la phrase de
-l'article qui le dit.</p>
+<p><strong>Références.</strong> L'article qui décrit LBL, puis une liste
+non exhaustive des articles ayant utilisé nos codes : le titre de chacun,
+ses auteurs et sa page sur ADS.</p>
 """
     sections.append(card("tab-others", "Tabs: Runs, Cleanup, References",
                          "Onglets : Runs, Ménage, Références",
@@ -885,7 +888,7 @@ TEMPLATE = """<!doctype html>
   <div class="site-banner">
     <div class="site-banner-inner">
       <div class="site-banner-text">
-        <h2>lbl-gui</h2>
+        <h2><img class="banner-icon" src="favicon.svg" alt="">lbl-gui</h2>
         <p><span lang="en">LBL with the PCA2D precleaning, and its window &middot; testers' guide</span><span lang="fr">LBL avec le prénettoyage PCA2D, et sa fenêtre &middot; guide des testeurs</span></p>
       </div>
       <button type="button" class="home-link lang-switch" id="lang" aria-label="language"><span lang="en">Français</span><span lang="fr">English</span></button>
@@ -946,6 +949,9 @@ TEMPLATE = """<!doctype html>
 """
 
 GUIDE_CSS = """/* the testers' guide: what theme.css does not have */
+/* the window's tab icon, in the banner too */
+.site-banner-text h2 { display: flex; align-items: center; gap: 10px; }
+.site-banner-text h2 .banner-icon { width: 30px; height: 30px; border-radius: 7px; display: block; }
 html[data-lang="fr"] [lang="en"], html[data-lang="en"] [lang="fr"] { display: none !important; }
 .lang-switch { cursor: pointer; font: inherit; margin-right: 8px; }
 .warning { border-color: rgba(255, 180, 84, 0.7); background: rgba(80, 45, 6, 0.55); }

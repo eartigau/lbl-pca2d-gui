@@ -316,24 +316,14 @@
       </div>
     </section>
 
-    <!-- REFERENCES: the method, and the papers whose velocities LBL measured
-         (static/references.json, made by tools/lbl_references.py) -->
+    <!-- REFERENCES: the method, and the papers that used our codes, each
+         as its title, its authors and its ADS page (static/references.json,
+         made by tools/lbl_references.py) -->
     <section class="pane span-3" id="pane-refs" hidden>
       <div class="card">
         <h2 data-t="refs_method"></h2>
-        <p class="hint" data-t="refs_method_hint"></p>
         <div id="refs_method"></div>
-        <div class="row spread refs-bib-head">
-          <span class="small muted">BibTeX</span>
-          <button type="button" class="button" id="refs_copy" data-t="refs_copy"></button>
-        </div>
-        <pre class="refs-bibtex" id="refs_bibtex"></pre>
-      </div>
-      <div class="card">
-        <div class="row spread">
-          <h2 id="refs_title"></h2>
-          <input type="text" id="refs_filter" class="refs-filter" data-t-placeholder="refs_filter">
-        </div>
+        <h2 id="refs_title" class="refs-used"></h2>
         <p class="hint" id="refs_hint"></p>
         <div id="refs_list"></div>
       </div>

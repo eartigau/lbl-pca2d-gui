@@ -504,7 +504,8 @@ lbl-gui --data-dir ~/lbl-data
                " how many are already here, how much to download, and the"
                " folder they will go to. Tick the rows to fetch.",
                "<strong>Fetch</strong>: downloads them into"
-               " <code>science/</code>, one file at a time, without ever"
+               " <code>science/</code>, four files at a time, a bar per"
+               " folder with how far it is and its time left, without ever"
                " moving or overwriting a file. The target then appears in"
                " <em>My targets</em>."],
               ["<strong>Le nom de l'étoile</strong>, tel que SIMBAD le"
@@ -518,8 +519,9 @@ lbl-gui --data-dir ~/lbl-data
                " combien sont déjà là, combien télécharger, et le dossier où"
                " ils iront. Cochez les lignes à récupérer.",
                "<strong>Récupérer</strong> : les télécharge dans"
-               " <code>science/</code>, un fichier à la fois, sans jamais"
-               " déplacer ni écraser un fichier. La cible apparaît ensuite"
+               " <code>science/</code>, quatre fichiers à la fois, une barre"
+               " par dossier avec où il en est et le temps qui lui reste,"
+               " sans jamais déplacer ni écraser un fichier. La cible apparaît ensuite"
                " dans <em>Mes cibles</em>."]),
         callout("tip",
                 "<p>While a search goes, <em>Stop the search</em> takes the"
