@@ -702,3 +702,6 @@ h2 .info { vertical-align: 3px; }
 .bar { height: 8px; border-radius: 999px; background: var(--row-alt); border: 1px solid var(--line); overflow: hidden; }
 .bar-fill { height: 100%; background: linear-gradient(90deg, #12936a, #1baf7a); transition: width 0.4s ease; }
 .bar-fill.with-failed { background: linear-gradient(90deg, #12936a, #eda100); }
+/* SIMBAD's Teff, under the field */
+.teff-note { margin-top: 3px; max-width: 24em; line-height: 1.35; white-space: normal; }
+.linkish { background: none; border: none; padding: 0 0 0 6px; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; }

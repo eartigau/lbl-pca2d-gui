@@ -1111,12 +1111,12 @@ function drawPerTarget() {
     //   in templates/, the scan's for a ticked target's own
     const temps = {};
     TEMPLATES.forEach((tp) => { if (tp.teff) temps[tp.name] = tp.teff; });
-    TARGETS.forEach((row) => { if (row.teff && !temps[row.name]) temps[row.name] = row.teff; });
+    TARGETS.forEach((row) => { const known = row.teff || simbadTeff(row.name); if (known && !temps[row.name]) temps[row.name] = known; });
     const labelled = (n) => `${n} (${temps[n] ? Math.round(temps[n]) : '?'} K)`;
     const others = TEMPLATES.map((tp) => tp.name).filter((n) => !/_pca2d(_|$)/.test(n) && !/_tc$/.test(n) && n !== name);
     const choices = [...new Set([...others, ...S.ticked.filter((n) => n !== name)])]
       .sort((a, b) => (temps[a] || 1e9) - (temps[b] || 1e9));
-    const own = S.teff[name] || target.teff || temps[name];
+    const own = S.teff[name] || target.teff || simbadTeff(name) || temps[name];
     const select = el('select', { onchange: (event) => { if (event.target.value) S.comparison[name] = event.target.value; else delete S.comparison[name]; wrapEdited = false; save(); } },
       el('option', { value: '', text: own ? `${t('comparison_self')} (${Math.round(own)} K)` : t('comparison_self') }),
       ...choices.map((c) => el('option', { value: c, text: labelled(c) })),
@@ -1124,16 +1124,62 @@ function drawPerTarget() {
       VETTED.length ? el('optgroup', { label: t('vetted_group') },
         VETTED.map((v) => el('option', { value: v.name, text: t('vetted_label', v.object, v.teff, v.nfiles) }))) : null);
     select.value = S.comparison[name] || '';
+    // the headers' Teff in grey, else SIMBAD's; SIMBAD's said under it
     const teff = el('input', {
-      type: 'number', step: 10, value: S.teff[name] ?? '', placeholder: target.teff ? Math.round(target.teff) : '',
+      type: 'number', step: 10, value: S.teff[name] ?? '', placeholder: target.teff ? Math.round(target.teff) : (simbadTeff(name) ?? ''),
       onchange: (event) => { if (event.target.value === '') delete S.teff[name]; else S.teff[name] = Number(event.target.value); wrapEdited = false; save(); },
     });
     const best = VETTED.length ? el('button', { type: 'button', class: 'button small', text: t('best_match'), onclick: () => bestMatch([name]) }) : null;
-    return el('tr', {}, el('td', { text: name }), el('td', {}, el('span', { class: 'row gap' }, select, best)), el('td', {}, teff));
+    return el('tr', {}, el('td', { text: name }), el('td', {}, el('span', { class: 'row gap' }, select, best)), el('td', {}, teff, simbadNote(name, target)));
   });
   $('per_target').replaceChildren(
     el('thead', {}, el('tr', {}, el('th', { text: t('col_target') }), el('th', {}, t('comparison'), info('help_comparison')), el('th', {}, t('teff'), info('help_teff')))),
     el('tbody', {}, rows.length ? rows : el('tr', {}, el('td', { colspan: 3, class: 'muted', text: t('no_points') }))));
+  $('simbad_teff').disabled = !S.ticked.length;
+  // a target's Teff asked of SIMBAD once (simbad.py keeps the answer)
+  askSimbad(S.ticked.filter((n) => !simbadAsked.has(n)));
+}
+
+// ── SIMBAD's Teff (simbad.py): the median of its measurements, else its
+//   spectral type's; used when the headers have none and nothing is typed
+let SIMBAD = {};
+const simbadAsked = new Set();
+function simbadTeff(name) {
+  const answer = SIMBAD[name];
+  return answer && answer.teff ? Math.round(answer.teff) : null;
+}
+async function askSimbad(names, refresh = false) {
+  // a target the scan has not read yet waits: its headers' OBJECT is one
+  //   of the names SIMBAD is asked (Gliese1214's folder, GJ1214's headers)
+  names = names.filter((n) => TARGETS.some((row) => row.name === n));
+  if (!names.length || !S.data_dir) return;
+  names.forEach((n) => { simbadAsked.add(n); SIMBAD[n] = { state: 'asking' }; });
+  drawPerTarget();
+  const targets = names.map((name) => ({ name, object: (TARGETS.find((row) => row.name === name) || {}).object || null }));
+  let data = {};
+  try {
+    data = await api.post('/api/teff', { data_dir: S.data_dir, targets, refresh }) || {};
+  } catch (error) { /* said as failed below */ }
+  names.forEach((n) => { SIMBAD[n] = data[n] || { state: 'failed' }; });
+  wrapEdited = false;
+  drawPerTarget();
+}
+function simbadNote(name, target) {
+  const answer = SIMBAD[name];
+  if (!answer) return null;
+  let text = '';
+  if (answer.state === 'asking') text = t('simbad_asking');
+  else if (answer.state === 'failed') text = t('simbad_failed');
+  else if (answer.state === 'unknown') text = t('simbad_unknown');
+  else if (!answer.teff) text = t('simbad_none', answer.main);
+  else if (answer.source === 'sptype') text = t('simbad_teff_spt', Math.round(answer.teff), answer.sptype);
+  else if (answer.n < answer.n_all) text = t('simbad_teff_some', Math.round(answer.teff), answer.n, answer.n_all);
+  else text = t('simbad_teff', Math.round(answer.teff), answer.n);
+  // the headers say another: SIMBAD's taken with a click
+  const other = answer.teff && target.teff && S.teff[name] === undefined && Math.abs(answer.teff - target.teff) >= 10;
+  return el('div', { class: 'teff-note small muted', title: answer.main ? t('simbad_why', answer.main, answer.sptype || '?') : null }, text,
+    other ? el('button', { type: 'button', class: 'linkish', text: t('simbad_use'),
+      onclick: () => { S.teff[name] = Math.round(answer.teff); wrapEdited = false; save(); drawPerTarget(); } }) : null);
 }
 
 // the vetted template of the nearest Teff, for targets of 2900-4300 K
@@ -1144,7 +1190,7 @@ function bestMatch(names) {
   names.forEach((name) => {
     const target = TARGETS.find((row) => row.name === name) || {};
     const own = TEMPLATES.find((tp) => tp.name === name) || {};
-    const teff = Number(S.teff[name] || target.teff || own.teff);
+    const teff = Number(S.teff[name] || target.teff || simbadTeff(name) || own.teff);
     if (!teff || teff < VETTED_RANGE[0] || teff > VETTED_RANGE[1] || !VETTED.length) {
       notes.push(t('best_match_none', name, teff ? Math.round(teff) : '?'));
       return;
@@ -1289,7 +1335,7 @@ function buildState() {
   const teff = {};
   S.ticked.forEach((name) => {
     const target = TARGETS.find((row) => row.name === name) || {};
-    teff[name] = S.teff[name] ?? (target.teff ? Math.round(target.teff) : null);
+    teff[name] = S.teff[name] ?? (target.teff ? Math.round(target.teff) : simbadTeff(name));
   });
   return {
     data_dir: S.data_dir, instrument: S.instrument, source: S.source, python: S.python,
@@ -1593,6 +1639,7 @@ async function init() {
   $('runs_refresh').onclick = loadRuns;
   $('measure').onclick = measure;
   $('best_all').onclick = () => bestMatch(S.ticked);
+  $('simbad_teff').onclick = () => askSimbad(S.ticked, true);
   // read the folder again: new or removed targets and spectra, and the
   //   headers of the files that changed (the others are kept)
   $('refresh_targets').onclick = async () => {

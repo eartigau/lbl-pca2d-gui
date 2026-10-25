@@ -149,8 +149,12 @@ def setup(page, out, lang, target="Gliese229", launch=False):
              [(1, "#plot_berv", "left"), (2, "#plot_vtot", "left"),
               (3, "#plot_snr", "left"), (4, "#min_rjd", "below")],
              bottom_selector="#max_rjd", margin=40, column="#plot_berv")
-    # LBL settings
+    # LBL settings, once SIMBAD has answered for the Teff
     tab(page, "lbl")
+    for _ in range(60):
+        if not page.locator('.teff-note:text-is("SIMBAD...")').count():
+            break
+        time.sleep(0.5)
     s.region("04_lbl", "#pane-lbl",
              [(1, "#lbl_setup_status", "left"), (2, "#python", "above"),
               (3, "#per_target select", "above"),

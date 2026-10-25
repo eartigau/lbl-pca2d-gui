@@ -22,7 +22,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import __version__, cleanup, history, i18n, lblinfo, runner
-from . import archives, targets
+from . import archives, simbad, targets
 from . import wrapgen, wrapload
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -345,6 +345,11 @@ class Handler(BaseHTTPRequestHandler):
         body = self._body()
         ctx = self.ctx
         try:
+            if route == "/api/teff":
+                data_dir = ctx.allow(body.get("data_dir", ""))
+                return self._json(simbad.teffs(data_dir,
+                                               body.get("targets") or [],
+                                               bool(body.get("refresh"))))
             if route == "/api/state":
                 ctx.save_state(body)
                 return self._json(dict(ok=True))

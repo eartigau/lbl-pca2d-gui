@@ -308,7 +308,10 @@ lbl-gui --data-dir ~/lbl-data
                " against. Keep <em>its own</em> for a star with many"
                " spectra; for a star with few, choose another star's of a"
                " similar type.",
-               "<strong>Teff</strong>: read from the headers (grey). Type a"
+               "<strong>Teff</strong>: read from the headers (grey), else"
+               " asked of SIMBAD by the target's name. What SIMBAD says is"
+               " written under the field (the median of the Teff it holds),"
+               " with <em>use it</em> when the headers say another. Type a"
                " value only to override it.",
                "<strong>Rewrite the files already on disk</strong>: leave it"
                " unticked the first time. Tick it when you run again after"
@@ -334,8 +337,11 @@ lbl-gui --data-dir ~/lbl-data
                " mesurée. Gardez <em>le sien</em> pour une étoile qui a"
                " beaucoup de spectres ; pour une étoile qui en a peu,"
                " choisissez celui d'une autre étoile de type voisin.",
-               "<strong>Teff</strong> : lue dans les en-têtes (en gris)."
-               " Tapez une valeur seulement pour la remplacer.",
+               "<strong>Teff</strong> : lue dans les en-têtes (en gris),"
+               " sinon demandée à SIMBAD par le nom de la cible. Ce que dit"
+               " SIMBAD est écrit sous le champ (la médiane des Teff qu'il"
+               " a), avec <em>la prendre</em> quand les en-têtes en disent"
+               " une autre. Tapez une valeur seulement pour la remplacer.",
                "<strong>Réécrire les fichiers déjà sur le disque</strong> :"
                " laissez-la décochée la première fois. Cochez-la quand vous"
                " relancez après avoir changé les spectres, le template ou le"
