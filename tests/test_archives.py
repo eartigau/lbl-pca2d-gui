@@ -132,3 +132,39 @@ def test_a_search_stops_and_drops_a_late_answer(tmp_path, monkeypatch):
     assert [g["inst"] for g in status["search"]["groups"]] == ["HARPS"]
     texts = " ".join(line["text"] for line in status["log"])
     assert "search stopped" in texts and "SOPHIE" in texts
+
+
+def test_several_stars_at_once_and_none_out_of_reach(tmp_path, monkeypatch):
+    # two stars, two instruments, every request at once; a star SOPHIE's
+    #   telescope never sees is not asked for there
+    import sys
+    import types
+    asked = []
+    places = {"GJ 1": dict(main="HD 225213", ra=1.38, dec=-37.7),
+              "AD Leo": dict(main="V* AD Leo", ra=154.9, dec=19.87)}
+
+    def groups(target, inst, root, ident):
+        asked.append((target, inst))
+        return [dict(_group(["%s.fits" % inst], lbl=inst, source="None"),
+                     obj=target.replace(" ", ""))]
+    fake = types.SimpleNamespace(
+        _ident=lambda target: places[target], groups=groups,
+        INSTRUMENTS={k: dict(label=k, archive=k, size=1.0) for k in
+                     archives.INSTRUMENTS})
+    monkeypatch.setitem(sys.modules, "koloa", types.SimpleNamespace(lblrun=fake))
+    monkeypatch.setitem(sys.modules, "koloa.lblrun", fake)
+    monkeypatch.setattr(archives, "ROOT", str(tmp_path / "root"))
+    box = archives.Archives()
+    box.start_search("GJ 1, AD Leo", ["HARPS", "SOPHIE"], str(tmp_path))
+    for _ in range(100):
+        if box.status()["search"]["state"] != "running":
+            break
+        time.sleep(0.05)
+    search = box.status()["search"]
+    assert search["targets"] == ["GJ 1", "AD Leo"]
+    assert search["cells"]["GJ 1|SOPHIE"]["state"] == "skipped"
+    assert ("GJ 1", "SOPHIE") not in asked and ("AD Leo", "SOPHIE") in asked
+    assert {(r["target"], r["inst"]) for r in search["groups"]} == {
+        ("GJ 1", "HARPS"), ("AD Leo", "HARPS"), ("AD Leo", "SOPHIE")}
+    assert len({r["folder"] for r in search["groups"]}) == 3
+    assert search["stars"]["AD Leo"]["place"].startswith("10:19:")

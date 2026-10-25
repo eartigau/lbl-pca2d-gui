@@ -361,29 +361,51 @@ function drawArchive() {
   box.replaceChildren(...lines.map((line) => el('div', { class: `lv-${line.level}` },
     el('span', { class: 'muted', text: `${line.t}  ` }), line.text)));
   if (atBottom) box.scrollTop = box.scrollHeight;
-  $('archive_star').textContent = search.main
-    ? t('archive_star', search.main, search.teff ? Math.round(search.teff) : '?')
-    : (search.error || '');
-  $('archive_states').replaceChildren(...Object.entries(search.instruments || {}).map(([key, about]) => {
-    const label = (ARCHIVE_INSTRUMENTS.find(([k]) => k === key) || [key, key])[1];
+  // each star as SIMBAD knows it: its name, where it is, its Teff
+  const targets = search.targets || (search.target ? [search.target] : []);
+  const stars = search.stars || {};
+  const several = targets.length > 1;
+  $('archive_star').replaceChildren(...(search.error && !targets.length ? [el('div', { text: search.error })] : targets.map((name) => {
+    const about = stars[name] || {};
+    if (about.state === 'resolving') return el('div', { class: 'muted' }, el('span', { class: 'ring' }), ` ${name}: SIMBAD...`);
+    if (about.state === 'failed') return el('div', { class: 'warn-text', text: `${name}: ${about.error || t('archive_failed')}` });
+    if (about.state === 'stopped') return el('div', { class: 'muted', text: `${name}: ${t('archive_stopped')}` });
+    return el('div', {},
+      el('strong', { text: about.main || search.main || name }),
+      about.place ? el('span', { class: 'mono', text: `  ${about.place}` }) : null,
+      `  ·  Teff ${about.teff ? Math.round(about.teff) : '?'} K`,
+      several && (about.main || '') !== name ? el('span', { class: 'muted', text: `  (${name})` }) : null);
+  })));
+  // one chip per instrument, per star when there are several
+  const cells = search.cells || {};
+  const chip = (key, about, label) => {
     const text = about.state === 'searching' ? t('archive_searching')
       : about.state === 'failed' ? t('archive_failed')
-        : about.state === 'stopped' ? t('archive_stopped') : t('archive_found', about.n || 0);
+        : about.state === 'stopped' ? t('archive_stopped')
+          : about.state === 'skipped' ? t('archive_skipped') : t('archive_found', about.n || 0);
     return el('span', { class: `chip ${about.state}`, 'data-tip': about.error ? esc(about.error) : null },
       about.state === 'searching' ? el('span', { class: 'ring' }) : null, `${label} · ${text}`);
-  }));
+  };
+  const instLabel = (key) => (ARCHIVE_INSTRUMENTS.find(([k]) => k === key) || [key, key])[1];
+  $('archive_states').replaceChildren(...(Object.keys(cells).length
+    ? Object.entries(cells).map(([key, about]) => {
+      const [name, inst] = key.split('|');
+      return chip(key, about, several ? `${name} · ${instLabel(inst)}` : instLabel(inst));
+    })
+    : Object.entries(search.instruments || {}).map(([key, about]) => chip(key, about, instLabel(key)))));
   const rows = search.groups || [];
   $('archive_wrap').hidden = !rows.length;
-  if (search.state === 'done' && !rows.length && search.main) {
-    $('archive_star').textContent += ` · ${t('archive_nothing', search.main)}`;
+  if (search.state === 'done' && !rows.length && targets.length) {
+    $('archive_star').append(el('div', { class: 'muted', text: t('archive_nothing', targets.join(', ')) }));
   }
-  const head = el('tr', {}, el('th', {}, ''), ...['col_instrument', 'col_reader', 'col_archive', 'col_files', 'col_have', 'col_size', 'col_folder']
-    .map((key) => el('th', { text: t(key) })));
+  const columns = [...(several ? ['col_target'] : []), 'col_instrument', 'col_reader', 'col_archive', 'col_files', 'col_have', 'col_size', 'col_folder'];
+  const head = el('tr', {}, el('th', {}, ''), ...columns.map((key) => el('th', { text: t(key) })));
   const body = rows.map((row) => el('tr', { class: archiveChosen.has(row.id) ? 'ticked' : '' },
     el('td', {}, el('input', {
       type: 'checkbox', checked: archiveChosen.has(row.id), disabled: fetch.state === 'running',
       onchange: (event) => { if (event.target.checked) archiveChosen.add(row.id); else archiveChosen.delete(row.id); drawArchive(); },
     })),
+    several ? el('td', { text: row.target || '' }) : null,
     el('td', { text: row.label }),
     el('td', { class: 'mono', text: `${row.lbl} · ${row.source}` }),
     el('td', { class: 'small', text: row.archive }),
@@ -398,11 +420,11 @@ function drawArchive() {
   $('archive_fetch').classList.toggle('running', fetch.state === 'running');
   $('archive_stop').hidden = fetch.state !== 'running';
   // one bar per instrument and target fetched
-  const target = search.main || search.target || '';
   $('archive_bars').replaceChildren(...(fetch.bars || []).map((bar) => {
     const share = bar.total ? Math.min(100, (100 * bar.done) / bar.total) : 100;
+    const whose = bar.target || search.main || search.target || '';
     return el('div', { class: 'bar-row' },
-      el('div', { class: 'bar-text small', text: t('archive_progress', `${bar.label} ${target} (science/${bar.folder})`, bar.done, bar.total, bar.failed) }),
+      el('div', { class: 'bar-text small', text: t('archive_progress', `${bar.label} ${whose} (science/${bar.folder})`, bar.done, bar.total, bar.failed) }),
       el('div', { class: 'bar' }, el('div', { class: `bar-fill${bar.failed ? ' with-failed' : ''}`, style: `width:${share.toFixed(1)}%` })));
   }));
   if (fetch.state === 'running') {
