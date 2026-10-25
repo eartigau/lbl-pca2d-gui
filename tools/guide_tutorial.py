@@ -314,7 +314,10 @@ lbl-gui --data-dir ~/lbl-data
                " unticked the first time. Tick it when you run again after"
                " changing the spectra, the template or the mask.",
                "<strong>The steps</strong>: all ticked by default. For HARPS"
-               " the <em>telluric cleaning</em> is on; for NIRPS and SPIRou"
+               " the <em>telluric cleaning</em> is on, in three steps that"
+               " the run's list shows: a first pass blind, a template of"
+               " its cleaned spectra, then a second pass of the spectra as"
+               " delivered divided by that template. For NIRPS and SPIRou"
                " it is off and locked (their pipeline corrects the"
                " tellurics)."],
               ["<strong>Instrument et source de données</strong> : détectés"
@@ -338,9 +341,12 @@ lbl-gui --data-dir ~/lbl-data
                " relancez après avoir changé les spectres, le template ou le"
                " masque.",
                "<strong>Les étapes</strong> : toutes cochées par défaut. Pour"
-               " HARPS, le <em>nettoyage tellurique</em> est actif ; pour"
-               " NIRPS et SPIRou il est désactivé et bloqué (leur pipeline"
-               " corrige déjà les telluriques)."]),
+               " HARPS, le <em>nettoyage tellurique</em> est actif, en trois"
+               " étapes que montre la liste du run : un premier passage à"
+               " l'aveugle, un template de ses spectres nettoyés, puis un"
+               " second passage des spectres livrés divisés par ce template."
+               " Pour NIRPS et SPIRou il est désactivé et bloqué (leur"
+               " pipeline corrige déjà les telluriques)."]),
         callout("example",
                 "<p>HARPS · ORIG detected, template <em>its own (%d K)</em>,"
                 " Teff %d K from the headers, nothing else changed.</p>"

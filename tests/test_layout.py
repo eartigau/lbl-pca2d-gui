@@ -100,3 +100,22 @@ def test_the_joint_fit_is_the_default_for_several_targets_only(tmp_path):
     off = wrapgen.build(dict(base, targets=["A", "B"],
                              pca2d=dict(n_star=1, n_earth=7, joint=False)))
     assert "joint" not in off["rparams"]["PCA2D"]
+
+
+def test_a_local_harps_folder_gets_its_files_pattern(tmp_path):
+    # HARPS read as ORIG: LBL's default ('*.fits') says nothing of the
+    #   files, and PCA2D then took the ESO archive's *_S2D_A.fits (GJ 1214,
+    #   2026-10-25); the wrap names the e2ds
+    from pca2dgui import wrapgen
+    folder = tmp_path / "science" / "GJ1214"
+    folder.mkdir(parents=True)
+    for stamp in ("2014-09-23T11-00-52.687", "2014-09-23T11-01-18.413"):
+        hdu = fits.PrimaryHDU(np.zeros((2, 4)))
+        hdu.header["INSTRUME"] = "HARPS"
+        hdu.writeto(str(folder / ("HARPS.ADP.%s_e2ds_A.fits" % stamp)))
+    state = dict(data_dir=str(tmp_path), instrument="HARPS", source="ORIG",
+                 targets=["GJ1214"], teff={"GJ1214": 3250}, pca2d_on=True,
+                 pca2d={"n_earth": 5})
+    built = wrapgen.build(state)
+    assert built["errors"] == []
+    assert built["rparams"]["INPUT_FILE"] == "*_e2ds_A.fits"

@@ -160,6 +160,18 @@ def build(state: dict) -> dict:
         rparams.setdefault("INPUT_FILE", found[0].get("input"))
         for key, value in (found[0].get("params") or {}).items():
             rparams.setdefault(key, value)
+    # LOCAL FOLDERS, where LBL's default says nothing of the files ('*.fits'
+    #   for HARPS): the end their spectra's names share, as LBL's own HARPS
+    #   wraps write it. Without it PCA2D took its HARPS default, the ESO
+    #   archive's *_S2D_A.fits, and found no e2ds (GJ 1214, 2026-10-25)
+    default = (sources.get(str(source)) or {}).get("input_file")
+    if not found and "INPUT_FILE" not in rparams \
+            and default in (None, "", "*", "*.fits"):
+        from .targets import files_of
+        pattern = files_pattern([path for target in targets
+                                 for path in files_of(data_dir, target)])
+        if pattern:
+            rparams["INPUT_FILE"] = pattern
     # the LBL switches
     lbl = state.get("lbl") or {}
     telluclean = (sources.get(str(source)) or {}).get("telluclean", False)
@@ -425,6 +437,20 @@ def render(rparams: dict, name: str = "", python: str = "") -> str:
 #: LBL's recipes, in the order _lbl_steps runs them, and their switch
 LBL_STEPS = (("template", "RUN_LBL_TEMPLATE"), ("mask", "RUN_LBL_MASK"),
              ("compute", "RUN_LBL_COMPUTE"), ("compile", "RUN_LBL_COMPILE"))
+
+
+def files_pattern(paths: list):
+    """'*' and the end the files' names share, its leading digits off (a
+    date's or a number's): *_e2ds_A.fits for HARPS read as ORIG; None when
+    they share no more than .fits (as lbl_pca2d.files_pattern)."""
+    names = [os.path.basename(path) for path in paths]
+    if not names:
+        return None
+    tail = os.path.commonprefix([name[::-1] for name in names])[::-1]
+    tail = tail.lstrip("0123456789")
+    if tail.lower() in ("", "fits", ".fits", "s", "ts", "its"):
+        return None
+    return "*" + tail
 
 
 def steps(rparams: dict) -> list:
