@@ -109,14 +109,10 @@ body {
 
 .site-banner { position: sticky; top: 0; z-index: 50; }
 .site-banner-text h2 { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
-.site-banner-text h2 .mark {
-  padding: 1px 9px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #62c2ff 0%, #6ce2ad 100%);
-  color: #08111f;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
+/* the tab's icon, in the banner too */
+.site-banner-text h2 .banner-icon { width: 30px; height: 30px; border-radius: 7px; display: block; }
+/* the icon carries the badge's gradient: the name beside it in plain text */
+.site-banner-text h2 .mark { font-weight: 700; letter-spacing: 0.04em; margin-right: -4px; }
 .site-banner .pill-button { color: rgba(232, 238, 248, 0.85); background: rgba(255, 255, 255, 0.06); border-color: rgba(232, 238, 248, 0.25); }
 .site-banner .pill-button:hover { color: #fff; border-color: rgba(255, 255, 255, 0.5); }
 
@@ -512,13 +508,13 @@ h2 .info { vertical-align: 3px; }
 .log div { white-space: pre-wrap; word-break: break-word; }
 /* the log is dark in both themes: its scrollbar always shown (macOS hides
    them until one scrolls) and its two jumps, to the top and the bottom */
-.log { --log-thumb: rgba(168, 180, 202, 0.5); --log-thumb-hover: rgba(168, 180, 202, 0.8); }
-.log::-webkit-scrollbar { width: 12px; height: 12px; }
-.log::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 12px; }
-.log::-webkit-scrollbar-thumb { background: var(--log-thumb); border-radius: 12px; border: 3px solid #050b15; }
-.log::-webkit-scrollbar-thumb:hover { background: var(--log-thumb-hover); }
+.log, .archive-log-lines { --log-thumb: rgba(168, 180, 202, 0.5); --log-thumb-hover: rgba(168, 180, 202, 0.8); }
+.log::-webkit-scrollbar, .archive-log-lines::-webkit-scrollbar { width: 12px; height: 12px; }
+.log::-webkit-scrollbar-track, .archive-log-lines::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 12px; }
+.log::-webkit-scrollbar-thumb, .archive-log-lines::-webkit-scrollbar-thumb { background: var(--log-thumb); border-radius: 12px; border: 3px solid #050b15; }
+.log::-webkit-scrollbar-thumb:hover, .archive-log-lines::-webkit-scrollbar-thumb:hover { background: var(--log-thumb-hover); }
 @supports not selector(::-webkit-scrollbar) {
-  .log { scrollbar-width: auto; scrollbar-color: var(--log-thumb) rgba(255, 255, 255, 0.05); }
+  .log, .archive-log-lines { scrollbar-width: auto; scrollbar-color: var(--log-thumb) rgba(255, 255, 255, 0.05); }
 }
 .log-wrap { position: relative; }
 /* the lines' offsetTop from the log itself: a step clicked scrolls to its line */
@@ -530,7 +526,8 @@ h2 .info { vertical-align: 3px; }
 .archive-log { margin-top: 12px; }
 .archive-log summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
 .archive-log-lines {
-  margin-top: 6px; max-height: 240px; overflow: auto; padding: 8px 10px;
+  /* room for its two jumps however few its lines */
+  margin-top: 6px; min-height: 96px; max-height: 240px; overflow: auto; padding: 8px 10px;
   background: var(--code-bg); color: #dfe8f5; border-radius: 10px;
   font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; line-height: 1.45;
 }

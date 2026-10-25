@@ -24,7 +24,7 @@
   <div class="site-banner">
     <div class="site-banner-inner">
       <div class="site-banner-text">
-        <h2><span class="mark">LBL</span><span data-t="banner_name"></span></h2>
+        <h2><img class="banner-icon" src="/static/favicon.svg" alt=""><span class="mark">LBL</span><span data-t="banner_name"></span></h2>
         <p data-t="tagline"></p>
       </div>
       <button id="theme" class="home-link pill-button" type="button"></button>
@@ -71,7 +71,7 @@
           </div>
           <div class="archive-form">
             <label class="field"><span class="label" data-t="archive_target"></span>
-              <input id="archive_target" type="text" spellcheck="false" autocomplete="off" placeholder="GJ 1, TOI-904, Barnard's star"></label>
+              <input id="archive_target" type="text" spellcheck="false" autocomplete="off" placeholder="GJ 1, GJ 2"></label>
             <div class="field"><span class="label" data-t="archive_instruments"></span><div id="archive_instruments" class="row gap wrap"></div></div>
             <button type="button" class="button primary" id="archive_search" data-t="archive_search"></button>
             <button type="button" class="button danger" id="archive_search_stop" data-t="archive_search_stop" hidden></button>
@@ -82,7 +82,13 @@
           <div id="archive_bars" class="bars"></div>
           <details class="archive-log" id="archive_log_box" open hidden>
             <summary data-t="archive_log"></summary>
-            <div id="archive_log" class="archive-log-lines"></div>
+            <div class="log-wrap">
+              <div id="archive_log" class="archive-log-lines"></div>
+              <div class="log-jumps">
+                <button type="button" class="log-jump" id="archive_log_top" data-t-title="archive_log_top">↑</button>
+                <button type="button" class="log-jump" id="archive_log_bottom" data-t-title="archive_log_bottom">↓</button>
+              </div>
+            </div>
           </details>
           <div class="row spread archive-foot">
             <span class="hint" id="archive_progress"></span>

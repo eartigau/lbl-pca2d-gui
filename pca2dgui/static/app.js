@@ -361,6 +361,7 @@ function drawArchive() {
   box.replaceChildren(...lines.map((line) => el('div', { class: `lv-${line.level}` },
     el('span', { class: 'muted', text: `${line.t}  ` }), line.text)));
   if (atBottom) box.scrollTop = box.scrollHeight;
+  logEdges('archive_log');
   // each star as SIMBAD knows it: its name, where it is, its Teff
   const targets = search.targets || (search.target ? [search.target] : []);
   const stars = search.stars || {};
@@ -1433,11 +1434,12 @@ function showStep(step) {
   logEdges();
 }
 
-/* the jumps of the log: off where the log already is */
-function logEdges() {
-  const box = $('log');
-  $('log_top').disabled = box.scrollTop < 4;
-  $('log_bottom').disabled = box.scrollHeight - box.scrollTop - box.clientHeight < 4;
+/* the jumps of a log (the run's, the archive search's): off where the log
+   already is */
+function logEdges(id = 'log') {
+  const box = $(id);
+  $(`${id}_top`).disabled = box.scrollTop < 4;
+  $(`${id}_bottom`).disabled = box.scrollHeight - box.scrollTop - box.clientHeight < 4;
 }
 
 async function stopJob() {
@@ -1587,10 +1589,12 @@ async function init() {
   $('refs_copy').onclick = copyBibtex;
   $('refs_filter').oninput = drawRefs;
   // to the top: the log stops following the run; to the bottom: it follows again
-  $('log_top').onclick = () => { $('log').scrollTop = 0; };
-  $('log_bottom').onclick = () => { const box = $('log'); box.scrollTop = box.scrollHeight; };
-  $('log').onscroll = logEdges;
-  logEdges();
+  for (const id of ['log', 'archive_log']) {
+    $(`${id}_top`).onclick = () => { $(id).scrollTop = 0; };
+    $(`${id}_bottom`).onclick = () => { const box = $(id); box.scrollTop = box.scrollHeight; };
+    $(id).onscroll = () => logEdges(id);
+    logEdges(id);
+  }
   $('runs_refresh').onclick = loadRuns;
   $('measure').onclick = measure;
   $('best_all').onclick = () => bestMatch(S.ticked);
