@@ -227,32 +227,26 @@ lbl-gui --data-dir ~/lbl-data
                " ligne grisée est en cours de lecture ; attendez qu'il n'y en"
                " ait plus."]),
         callout("see",
-                "<p>Under the field: <code>%d targets, %d spectra</code>. The"
-                " instrument (HARPS) and the data source (ORIG) are read from"
-                " the files.</p>" % (x["folder_targets"],
-                                     x["folder_spectra"]),
-                "<p>Sous le champ : <code>%d cibles, %d spectres</code>."
-                " L'instrument (HARPS) et la source de données (ORIG) sont lus"
-                " dans les fichiers.</p>" % (x["folder_targets"],
-                                            x["folder_spectra"])),
+                "<p>Under the field: <code>%d targets, %d spectra</code>.</p>"
+                % (x["folder_targets"], x["folder_spectra"]),
+                "<p>Sous le champ : <code>%d cibles, %d spectres</code>.</p>"
+                % (x["folder_targets"], x["folder_spectra"])),
     ]))
 
     out.append(step(4, ("Tick the target", "Cocher la cible"), [
         shot("02_ticked", "Gliese 229 ticked.", "Gliese 229 cochée."),
         marks(["<strong>Tick</strong> the target to run. Several targets of"
                " one instrument can be ticked (a joint fit); two instruments"
-               " cannot.",
-               "<strong>Instrument and data source</strong> follow the"
-               " ticked files: check them, but there is nothing to choose.",
+               " cannot. The instrument and the data source are read from"
+               " its files (you will check them in the next tab).",
                "<strong>The banner</strong> now describes the ticked"
                " targets only: their spectra and dates, their nights and"
                " median SNR, the range of their BERV."],
               ["<strong>Cochez</strong> la cible à traiter. On peut cocher"
                " plusieurs cibles d'un même instrument (un fit joint), pas"
-               " deux instruments.",
-               "<strong>Instrument et source de données</strong> suivent les"
-               " fichiers cochés : vérifiez-les, mais il n'y a rien à"
-               " choisir.",
+               " deux instruments. L'instrument et la source de données sont"
+               " lus dans ses fichiers (vous les vérifierez à l'onglet"
+               " suivant).",
                "<strong>Le bandeau</strong> décrit maintenant les cibles"
                " cochées seulement : leurs spectres et leurs dates, leurs"
                " nuits et leur SNR médian, l'étendue de leur BERV."]),
@@ -301,7 +295,16 @@ lbl-gui --data-dir ~/lbl-data
 
     out.append(step(6, ("LBL settings", "Réglages LBL"), [
         shot("04_lbl", "The LBL settings tab.", "L'onglet Réglages LBL."),
-        marks(["<strong>Template</strong>: what each exposure is measured"
+        marks(["<strong>Instrument and data source</strong>: detected from"
+               " the ticked files, the green line says so (here HARPS ·"
+               " ORIG). You can choose others in the two menus above it (a"
+               " NIRPS mode, a source the files do not tell): the line then"
+               " turns orange, says what the files say, and <em>Use the"
+               " detection</em> brings it back.",
+               "<strong>Python</strong> that runs the wraps: the one of the"
+               " window by default; type another only to run in another"
+               " environment.",
+               "<strong>Template</strong>: what each exposure is measured"
                " against. Keep <em>its own</em> for a star with many"
                " spectra; for a star with few, choose another star's of a"
                " similar type.",
@@ -314,7 +317,17 @@ lbl-gui --data-dir ~/lbl-data
                " the <em>telluric cleaning</em> is on; for NIRPS and SPIRou"
                " it is off and locked (their pipeline corrects the"
                " tellurics)."],
-              ["<strong>Template</strong> : ce contre quoi chaque pose est"
+              ["<strong>Instrument et source de données</strong> : détectés"
+               " d'après les fichiers cochés, la ligne verte le dit (ici"
+               " HARPS · ORIG). Vous pouvez en choisir d'autres dans les deux"
+               " menus au-dessus (un mode de NIRPS, une source que les"
+               " fichiers ne disent pas) : la ligne devient orange, dit ce"
+               " que disent les fichiers, et <em>Revenir à la détection</em>"
+               " la remet.",
+               "<strong>Python</strong> qui lance les wraps : celui de la"
+               " fenêtre par défaut ; n'en tapez un autre que pour tourner"
+               " dans un autre environnement.",
+               "<strong>Template</strong> : ce contre quoi chaque pose est"
                " mesurée. Gardez <em>le sien</em> pour une étoile qui a"
                " beaucoup de spectres ; pour une étoile qui en a peu,"
                " choisissez celui d'une autre étoile de type voisin.",
@@ -329,10 +342,11 @@ lbl-gui --data-dir ~/lbl-data
                " NIRPS et SPIRou il est désactivé et bloqué (leur pipeline"
                " corrige déjà les telluriques)."]),
         callout("example",
-                "<p>Template <em>its own (%d K)</em>, Teff %d K from the"
-                " headers, nothing else changed.</p>" % (x["teff"], x["teff"]),
-                "<p>Template <em>le sien (%d K)</em>, Teff %d K lue dans les"
-                " en-têtes, rien d'autre de changé.</p>"
+                "<p>HARPS · ORIG detected, template <em>its own (%d K)</em>,"
+                " Teff %d K from the headers, nothing else changed.</p>"
+                % (x["teff"], x["teff"]),
+                "<p>HARPS · ORIG détectés, template <em>le sien (%d K)</em>,"
+                " Teff %d K lue dans les en-têtes, rien d'autre de changé.</p>"
                 % (x["teff"], x["teff"])),
     ]))
 

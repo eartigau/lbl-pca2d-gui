@@ -143,8 +143,7 @@ def setup(page, out, lang, target="Gliese229", launch=False):
     page.check(target_row(target))
     time.sleep(4)
     s.region("02_ticked", "#setup",
-             [(1, target_row(target), "left"), (2, "#instrument", "below"),
-              (3, "#tiles", "left")],
+             [(1, target_row(target), "left"), (2, "#tiles", "left")],
              bottom_selector="#targets_wrap", margin=30)
     s.region("03_plots", "#plot_berv",
              [(1, "#plot_berv", "left"), (2, "#plot_vtot", "left"),
@@ -153,10 +152,11 @@ def setup(page, out, lang, target="Gliese229", launch=False):
     # LBL settings
     tab(page, "lbl")
     s.region("04_lbl", "#pane-lbl",
-             [(1, "#per_target select", "above"),
-              (2, "#per_target input", "above"),
-              (3, "#overwrite_all", "left"), (4, "#switches", "left")],
-             bottom_selector="#resproj", margin=30)
+             [(1, "#lbl_setup_status", "left"), (2, "#python", "above"),
+              (3, "#per_target select", "above"),
+              (4, "#per_target input", "above"),
+              (5, "#overwrite_all", "left"), (6, "#switches", "left")],
+             bottom_selector="#resproj", margin=40)
     pca2d_shots(page, out, lang)
     run_shots(page, out, lang, launch)
 
