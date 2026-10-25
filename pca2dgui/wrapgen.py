@@ -470,8 +470,10 @@ def steps(rparams: dict) -> list:
     tellu = bool(rparams.get("RUN_LBL_TELLUCLEAN"))
     measured = set()
 
-    def lbl(obj):
+    def lbl(obj, template=True):
         for kind, switch in LBL_STEPS:
+            if kind == "template" and not template:
+                continue
             if rparams.get(switch, True):
                 out.append(dict(kind=kind, obj=obj))
         if rparams.get("REPORT", True) and rparams.get("RUN_LBL_COMPILE", True):
@@ -480,23 +482,25 @@ def steps(rparams: dict) -> list:
     fitted = False
     for target in targets:
         obj = target
-        # the telluric cleaning in its three steps (lbl_wrap): a first pass
+        # the telluric cleaning in its four steps (lbl_wrap): a first pass
         #   blind, a template of its cleaned spectra, a second pass of the
-        #   spectra as delivered divided by that template; all three under
-        #   the target's name (group), each with its own label
+        #   spectra as delivered divided by that template, the template made
+        #   again from them; all under the target's name (group), each with
+        #   its own label. LBL's own template step then finds it on disk
         if tellu:
-            out.append(dict(kind="telluclean", obj=target,
-                            label="step_telluclean_1"))
-            out.append(dict(kind="template", obj=target + "_tc", group=target,
-                            label="step_template_tc"))
-            out.append(dict(kind="telluclean", obj=target,
-                            label="step_telluclean_2"))
+            for kind, obj, label in (
+                    ("telluclean", target, "step_telluclean_1"),
+                    ("template", target + "_tc", "step_template_tc"),
+                    ("telluclean", target, "step_telluclean_2"),
+                    ("template", target + "_tc", "step_template_tc2")):
+                out.append(dict(kind=kind, obj=obj, group=target,
+                                label=label))
             obj = target + "_tc"
         if not on:
-            lbl(obj)
+            lbl(obj, template=not tellu)
             continue
         if compare and obj not in measured:
-            lbl(obj)
+            lbl(obj, template=not tellu)
             measured.add(obj)
         if joint and not fitted and compare and not tellu:
             for other in targets:

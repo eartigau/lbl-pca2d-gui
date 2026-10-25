@@ -546,6 +546,135 @@ règlent chaque étape séparément.</p>
                                  "Indicateur de température")
         + help_of("help_resproj")))
 
+    tellu_en = """
+<p>HARPS, HARPS-N, ESPRESSO, SOPHIE and the other optical spectrographs
+deliver their spectra with the Earth's atmosphere still in them; NIRPS's and
+SPIRou's come corrected by APERO. For the optical ones LBL cleans the
+tellurics itself (<em>telluric cleaning</em>, on by default, in the LBL
+settings), in <strong>two passes</strong>, and the run's list of steps shows
+the four steps they take.</p>
+<h3>What one pass does</h3>
+<p>For each spectrum, a TAPAS model of the atmosphere's transmission, with
+two exponents: one for water, one for the dry absorbers (O<sub>2</sub> and
+the others). The exponents start from the airmass (dry) and 0.5 (water) and
+are adjusted until the corrected spectrum no longer correlates with the
+telluric lines (a cross-correlation against a mask of water lines and one of
+dry lines, up to 20 iterations, to 0.001 in the exponents); for HARPS,
+HARPS-N and ESPRESSO the water exponent is then fitted again by the
+derivative method (the exponent that leaves the corrected spectrum
+smoothest). The spectrum as delivered is divided by that transmission and
+written to <code>science/&lt;object&gt;_tc/</code>; where the transmission
+is below e<sup>-1</sup> (lines deeper than 63&nbsp;%), the pixels are set to
+NaN rather than corrected.</p>
+<h3>Why twice</h3>
+<ol>
+<li><strong>First pass, blind.</strong> The exponents are fitted on the
+spectrum as it is, the star's own lines included. Where a stellar line falls
+on a telluric line of the mask, it counts as atmosphere and biases the
+exponents; and since the star moves against the atmosphere with the BERV
+over the year, that bias changes from night to night.</li>
+<li><strong>A template of the cleaned spectra</strong>
+(<code>&lt;object&gt;_tc</code>). Put in the star's frame and combined,
+the tellurics left by the first pass land at a different place on every
+night and average out, as long as the nights span enough BERV: what
+remains is the star's spectrum.</li>
+<li><strong>Second pass, divided by that template.</strong> The spectra as
+delivered (not those of the first pass) are fitted again, each divided by
+the template shifted to its night's BERV: the star's lines are gone, and the
+exponents are measured on the atmosphere alone. The template only enters the
+fit: the file written is still the delivered spectrum divided by the
+transmission, and it replaces the first pass's.</li>
+<li><strong>The template made again</strong>, from the second pass's
+spectra: the one the mask, the velocities and PCA2D are measured
+against.</li>
+</ol>
+<p>LBL's own steps then run on <code>&lt;object&gt;_tc</code>: the mask, the
+velocities, the rdb table and the report; with PCA2D, the precleaning works
+on these cleaned spectra too. Each pass takes about a second per spectrum
+(90 HARPS spectra of GJ 1214: 1 min 35 s).</p>
+<h3>Checking it in the log</h3>
+<p>Each iteration of a spectrum writes a line such as <code>3: water
+expo=0.4629, dry expo=1.4790, airmass=1.2130, template=False
+dexpo=0.0013</code>. The first pass says <code>template=False</code>, the
+second <code>template=True</code> (its banner says
+<code>TELLUCLEAN_USE_TEMPLATE="True"</code>), with exponents that differ a
+little from the first pass's. A second pass that says
+<code>template=False</code> did not find the template and cleaned blind
+again; LBL now says so as a warning. That was the case of every version of
+LBL from 2026-02-24 to 2026-10-25, and until then the template was not made
+again after the second pass either (the first pass's stayed on disk): a run
+of an optical spectrograph made in that time is worth running again, with
+<em>rewrite the files already on disk</em> ticked.</p>
+"""
+    tellu_fr = """
+<p>HARPS, HARPS-N, ESPRESSO, SOPHIE et les autres spectrographes optiques
+livrent leurs spectres avec l'atmosphère terrestre encore dedans ; ceux de
+NIRPS et de SPIRou arrivent corrigés par APERO. Pour les optiques, LBL
+nettoie lui-même les telluriques (<em>nettoyage tellurique</em>, actif par
+défaut, dans les réglages LBL), en <strong>deux passages</strong>, et la
+liste des étapes du run montre les quatre étapes qu'ils prennent.</p>
+<h3>Ce que fait un passage</h3>
+<p>Pour chaque spectre, un modèle TAPAS de la transmission de l'atmosphère,
+avec deux exposants : un pour l'eau, un pour les absorbants secs
+(O<sub>2</sub> et les autres). Les exposants partent de la masse d'air
+(sec) et de 0,5 (eau), et sont ajustés jusqu'à ce que le spectre corrigé ne
+corrèle plus avec les raies telluriques (une corrélation croisée avec un
+masque de raies d'eau et un de raies sèches, au plus 20 itérations, à
+0,001 près sur les exposants) ; pour HARPS, HARPS-N et ESPRESSO,
+l'exposant de l'eau est ensuite réajusté par la méthode de la dérivée
+(l'exposant qui laisse le spectre corrigé le plus lisse). Le spectre livré
+est divisé par cette transmission et écrit dans
+<code>science/&lt;objet&gt;_tc/</code> ; là où la transmission est sous
+e<sup>-1</sup> (raies plus profondes que 63&nbsp;%), les pixels sont mis à
+NaN plutôt que corrigés.</p>
+<h3>Pourquoi deux fois</h3>
+<ol>
+<li><strong>Premier passage, à l'aveugle.</strong> Les exposants sont
+ajustés sur le spectre tel quel, raies de l'étoile comprises. Là où une raie
+stellaire tombe sur une raie tellurique du masque, elle compte comme de
+l'atmosphère et biaise les exposants ; et comme l'étoile se déplace par
+rapport à l'atmosphère avec le BERV au fil de l'année, ce biais change
+d'une nuit à l'autre.</li>
+<li><strong>Un template des spectres nettoyés</strong>
+(<code>&lt;objet&gt;_tc</code>). Ramenées dans le référentiel de l'étoile
+et combinées, les telluriques laissées par le premier passage tombent à un
+endroit différent chaque nuit et se moyennent, pourvu que les nuits
+couvrent assez de BERV : il reste le spectre de l'étoile.</li>
+<li><strong>Second passage, divisé par ce template.</strong> Les spectres
+livrés (pas ceux du premier passage) sont ajustés de nouveau, chacun divisé
+par le template décalé au BERV de sa nuit : les raies de l'étoile ont
+disparu, et les exposants sont mesurés sur l'atmosphère seule. Le template
+n'entre que dans l'ajustement : le fichier écrit reste le spectre livré
+divisé par la transmission, et il remplace celui du premier passage.</li>
+<li><strong>Le template refait</strong>, à partir des spectres du second
+passage : c'est contre lui que se mesurent le masque, les vitesses et
+PCA2D.</li>
+</ol>
+<p>Les étapes de LBL tournent ensuite sur <code>&lt;objet&gt;_tc</code> :
+le masque, les vitesses, la table rdb et le rapport ; avec PCA2D, le
+pré-nettoyage travaille lui aussi sur ces spectres nettoyés. Chaque passage
+prend environ une seconde par spectre (90 spectres HARPS de GJ 1214 :
+1 min 35 s).</p>
+<h3>Le vérifier dans le journal</h3>
+<p>Chaque itération d'un spectre écrit une ligne comme <code>3: water
+expo=0.4629, dry expo=1.4790, airmass=1.2130, template=False
+dexpo=0.0013</code>. Le premier passage dit <code>template=False</code>, le
+second <code>template=True</code> (sa bannière dit
+<code>TELLUCLEAN_USE_TEMPLATE="True"</code>), avec des exposants un peu
+différents de ceux du premier passage. Un second passage qui dit
+<code>template=False</code> n'a pas trouvé le template et a nettoyé de
+nouveau à l'aveugle ; LBL le dit maintenant par un avertissement. C'était
+le cas de toutes les versions de LBL du 2026-02-24 au 2026-10-25, et
+jusque-là le template n'était pas non plus refait après le second passage
+(celui du premier restait sur le disque) : un run d'un spectrographe
+optique fait dans cet intervalle mérite d'être relancé, <em>réécrire les
+fichiers déjà sur le disque</em> coché.</p>
+"""
+    sections.append(card(
+        "tellurics", "The telluric cleaning of optical spectra, in two passes",
+        "Le nettoyage tellurique des spectres optiques, en deux passages",
+        both(tellu_en, tellu_fr)))
+
     pca_en = """
 <p>The precleaning is on by default and can be switched off (LBL alone).
 Every option below is written into the wrap only when it differs from the
@@ -838,6 +967,8 @@ Ctrl+Maj+R).</li>
             ("launch", "Starting the window", "Lancer la fenêtre"),
             ("tab-targets", "Tab: Targets", "Onglet : Cibles"),
             ("tab-lbl", "Tab: LBL settings", "Onglet : Réglages LBL"),
+            ("tellurics", "The telluric cleaning, in two passes",
+             "Le nettoyage tellurique, en deux passages"),
             ("tab-pca2d", "Tab: PCA2D settings", "Onglet : Réglages PCA2D"),
             ("tab-run", "Tab: Run", "Onglet : Lancer"),
             ("tab-others", "Tabs: Runs, Cleanup, References",

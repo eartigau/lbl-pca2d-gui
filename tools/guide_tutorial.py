@@ -317,10 +317,11 @@ lbl-gui --data-dir ~/lbl-data
                " unticked the first time. Tick it when you run again after"
                " changing the spectra, the template or the mask.",
                "<strong>The steps</strong>: all ticked by default. For HARPS"
-               " the <em>telluric cleaning</em> is on, in three steps that"
+               " the <em>telluric cleaning</em> is on, in four steps that"
                " the run's list shows: a first pass blind, a template of"
-               " its cleaned spectra, then a second pass of the spectra as"
-               " delivered divided by that template. For NIRPS and SPIRou"
+               " its cleaned spectra, a second pass of the spectra as"
+               " delivered divided by that template, and the template made"
+               " again (<a href=\"#tellurics\">why twice</a>). For NIRPS and SPIRou"
                " it is off and locked (their pipeline corrects the"
                " tellurics)."],
               ["<strong>Instrument et source de données</strong> : détectés"
@@ -347,10 +348,12 @@ lbl-gui --data-dir ~/lbl-data
                " relancez après avoir changé les spectres, le template ou le"
                " masque.",
                "<strong>Les étapes</strong> : toutes cochées par défaut. Pour"
-               " HARPS, le <em>nettoyage tellurique</em> est actif, en trois"
+               " HARPS, le <em>nettoyage tellurique</em> est actif, en quatre"
                " étapes que montre la liste du run : un premier passage à"
-               " l'aveugle, un template de ses spectres nettoyés, puis un"
-               " second passage des spectres livrés divisés par ce template."
+               " l'aveugle, un template de ses spectres nettoyés, un second"
+               " passage des spectres livrés divisés par ce template, et le"
+               " template refait (<a href=\"#tellurics\">pourquoi deux"
+               " fois</a>)."
                " Pour NIRPS et SPIRou il est désactivé et bloqué (leur"
                " pipeline corrige déjà les telluriques)."]),
         callout("example",
