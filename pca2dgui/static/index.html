@@ -30,7 +30,7 @@
 
   <main class="layout">
     <section class="card span-3" id="setup">
-      <div class="setup-grid">
+      <div class="setup-grid setup-one">
         <label class="field wide">
           <span class="label"><span data-t="data_dir"></span><span class="info" data-help="data_dir"></span></span>
           <span class="row">
@@ -38,18 +38,6 @@
             <button id="scan" type="button" class="button primary" data-t="scan"></button>
           </span>
           <span class="hint small" id="scan_status" data-t="data_dir_hint"></span>
-        </label>
-        <label class="field">
-          <span class="label"><span data-t="instrument"></span><span class="info" data-help="instrument"></span></span>
-          <select id="instrument"></select>
-        </label>
-        <label class="field">
-          <span class="label"><span data-t="source"></span><span class="info" data-help="source"></span></span>
-          <select id="source"></select>
-        </label>
-        <label class="field wide">
-          <span class="label"><span data-t="python"></span><span class="info" data-help="python"></span></span>
-          <input id="python" type="text" spellcheck="false" autocomplete="off" class="mono small">
         </label>
       </div>
     </section>
@@ -155,6 +143,28 @@
     <!-- LBL SETTINGS -->
     <section class="pane span-3" id="pane-lbl" hidden>
       <div class="pane-grid">
+        <!-- the instrument, the data source and the Python that runs the
+             wraps: set from the ticked targets' files, changed here only
+             when the window guessed wrong -->
+        <div class="card span-3" id="lbl_setup">
+          <h2 data-t="lbl_setup"></h2>
+          <div class="setup-grid setup-lbl">
+            <label class="field">
+              <span class="label"><span data-t="instrument"></span><span class="info" data-help="instrument"></span></span>
+              <select id="instrument"></select>
+            </label>
+            <label class="field">
+              <span class="label"><span data-t="source"></span><span class="info" data-help="source"></span></span>
+              <select id="source"></select>
+            </label>
+            <label class="field wide">
+              <span class="label"><span data-t="python"></span><span class="info" data-help="python"></span></span>
+              <input id="python" type="text" spellcheck="false" autocomplete="off" class="mono small">
+            </label>
+          </div>
+          <div class="setup-status" id="lbl_setup_status"></div>
+          <p class="hint small" data-t="lbl_setup_hint"></p>
+        </div>
         <div class="card span-2">
           <div class="row spread">
             <h2 data-t="per_target"></h2>

@@ -180,6 +180,7 @@ async function loadStrings() {
   document.querySelectorAll('[data-t-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.tPlaceholder); });
   document.querySelectorAll('[data-help]').forEach((node) => { node.textContent = 'i'; node.dataset.tip = helpHtml(t(`help_${node.dataset.help}`)); });
   $('lang').textContent = T.lang_switch;
+  drawSetupStatus();
   applyTheme();
   updateLaunch(null);
   $('skip_pca2d').replaceChildren(
@@ -497,6 +498,7 @@ async function loadTargets() {
   S.ticked = S.ticked.filter((name) => TARGETS.find((row) => row.name === name));
   drawTargets();
   drawPerTarget();
+  drawSetupStatus();
   await loadPoints();
 }
 
@@ -644,38 +646,80 @@ function toggle(name) {
 // the instrument follows the ticked targets when they are all of one other
 //   family than the one chosen (SPIRou spectra run as NIRPS_HE, 2026-10-23)
 const family = (name) => String(name || '').toUpperCase().split('_')[0].replace(/[^A-Z0-9]/g, '');
-async function followTicked() {
-  // folders fetched from an archive say their reader: instrument and source
+// ── the instrument and the data source: detected, or chosen by hand ─────
+// What the ticked targets' files say: their archive's reader when fetched,
+//   else the headers' instrument and the files' layout (targets.py). null
+//   where nothing is ticked; instrument null when the ticked disagree
+function detectedSetup() {
   const ticked = TARGETS.filter((row) => S.ticked.includes(row.name));
+  if (!ticked.length) return null;
+  const from = ticked.map((row) => row.name);
   const readers = [...new Set(ticked.map((row) => (row.archive ? `${row.archive.lbl}|${row.archive.source}` : null)))];
-  if (ticked.length && readers.length === 1 && readers[0]) {
-    const [lbl, source] = readers[0].split('|');
-    if (lbl !== S.instrument || source !== S.source) {
-      S.instrument = lbl; S.instrument_set = true; $('instrument').value = lbl;
-      fillSources(); S.source = source; $('source').value = source;
-      save(); await loadInstrumentThings();
-      $('target_notes').textContent = t('instrument_followed', `${lbl} · ${source}`);
-    }
-    return;
+  if (readers.length === 1 && readers[0]) {
+    const [instrument, source] = readers[0].split('|');
+    return { instrument, source, from };
   }
   const found = [...new Set(ticked.map((row) => guessInstrument(row.instrument)))];
-  if (found.length !== 1 || !found[0]) return;
-  const moved = family(found[0]) !== family(S.instrument);
-  if (moved) {
-    S.instrument = found[0];
+  if (found.length !== 1 || !found[0]) return { instrument: null, source: null, from };
+  const said = tickedSource();
+  const source = said && sourcesOf(found[0]).some((row) => row.source === said) ? said : null;
+  return { instrument: found[0], source, from };
+}
+
+// The detection applied, unless the instrument and the source were chosen
+//   by hand (S.setup_manual) for an instrument of the same family as the
+//   files: a NIRPS mode, a source the files do not tell. A choice of
+//   another family cannot read the files and gives way, said so
+async function followTicked() {
+  const d = detectedSetup();
+  if (!d || !d.instrument) { drawSetupStatus(); return; }
+  if (S.setup_manual && family(S.instrument) === family(d.instrument)) { drawSetupStatus(); return; }
+  const before = `${S.instrument}|${S.source}`;
+  if (S.setup_manual) $('target_notes').textContent = t('setup_overruled', S.instrument, d.instrument);
+  S.setup_manual = false;
+  if (family(d.instrument) !== family(S.instrument) || d.instrument !== S.instrument) {
+    S.instrument = d.instrument;
     S.instrument_set = true;
     $('instrument').value = S.instrument;
     fillSources();
   }
-  // the data source too, as the files' layout says it (the CADC's t.fits
-  //   run as APERO stopped on the first one, 2026-10-24)
-  const said = tickedSource();
-  const resourced = Boolean(said) && said !== S.source && sourcesOf(S.instrument).some((row) => row.source === said);
-  if (resourced) { S.source = said; $('source').value = said; }
-  if (!moved && !resourced) return;
-  save();
-  await loadInstrumentThings();
-  $('target_notes').textContent = t('instrument_followed', resourced ? `${S.instrument} · ${S.source}` : S.instrument);
+  if (d.source && d.source !== S.source) { S.source = d.source; $('source').value = d.source; }
+  if (`${S.instrument}|${S.source}` !== before) {
+    save();
+    await loadInstrumentThings();
+    $('target_notes').textContent = t('instrument_followed', `${S.instrument} · ${S.source}`);
+  }
+  drawSetupStatus();
+}
+
+// What is in force, said in one line under the fields: detected (and from
+//   which targets), or chosen by hand (and what the files say), and the
+//   Python: the window's own or another
+function drawSetupStatus() {
+  const box = $('lbl_setup_status');
+  if (!box) return;
+  const d = detectedSetup();
+  const now = `${S.instrument} · ${S.source}`;
+  const manual = Boolean(S.setup_manual);
+  $('instrument').classList.toggle('set', manual);
+  $('source').classList.toggle('set', manual);
+  let line;
+  if (!d) {
+    line = el('span', { class: 'muted', text: t('setup_none') });
+  } else if (!d.instrument) {
+    line = el('span', { class: 'warn-text', text: t('setup_mixed') });
+  } else if (manual) {
+    line = el('span', { class: 'warn-text' }, t('setup_manual', now, `${d.instrument} · ${d.source || '?'}`), ' ',
+      el('button', { type: 'button', class: 'button', text: t('setup_reset'), onclick: async () => { S.setup_manual = false; save(); await followTicked(); } }));
+  } else {
+    const names = d.from.length > 3 ? `${d.from.slice(0, 3).join(', ')}...` : d.from.join(', ');
+    line = el('span', { class: 'good-text' }, `✓ ${t('setup_auto', names, now)}`,
+      d.source ? '' : ` ${t('setup_unknown', S.source)}`);
+  }
+  const python = S.python && S.python !== DEFAULT_PYTHON;
+  $('python').classList.toggle('set', python);
+  box.replaceChildren(line, el('div', { class: 'muted small' }, python ? t('python_manual') : t('python_auto'),
+    python ? el('button', { type: 'button', class: 'reset', title: t('reset'), text: '↺', onclick: () => { S.python = DEFAULT_PYTHON; $('python').value = S.python; save(); drawSetupStatus(); wrapEdited = false; } }) : null));
 }
 
 async function loadPoints() {
@@ -1133,7 +1177,7 @@ async function loadWrap() {
   const loaded = data.state;
   const keep = { lang: S.lang, tab: S.tab, python: S.python, sort: S.sort, hidden_instruments: S.hidden_instruments };
   Object.assign(S, JSON.parse(JSON.stringify(DEFAULTS)), keep, loaded,
-    { name: loaded.name || '', name_auto: !loaded.name, instrument_set: true });
+    { name: loaded.name || '', name_auto: !loaded.name, instrument_set: true, setup_manual: true });
   const notes = [t('loaded', data.path), ...(data.notes || [])];
   if (data.skipped && data.skipped.length) notes.push(t('load_skipped', data.skipped.join(', ')));
   box.replaceChildren(el('div', { class: 'message warning' }, el('ul', {}, notes.map((n) => el('li', { text: n })))));
@@ -1452,6 +1496,8 @@ async function deleteSelected() {
 // blurred figures of papers whose velocities LBL measured, one mosaic per
 //   theme (tools/paper_backdrop.py); the References tab credits them
 let backdropFor = null;
+// the Python this window runs with: the wraps' by default
+let DEFAULT_PYTHON = '';
 function setBackdrop() {
   const theme = S.theme === 'dark' ? 'dark' : 'light';
   if (backdropFor === theme) return;
@@ -1470,10 +1516,13 @@ function setBackdrop() {
 async function init() {
   const state = await api.get('/api/state');
   Object.assign(S, JSON.parse(JSON.stringify(DEFAULTS)), state.state || {});
-  // the window opens on every target, none ticked, no instrument hidden
+  // the window opens on every target, none ticked, no instrument hidden,
+  //   and the instrument and source detected again from what gets ticked
   S.ticked = [];
   S.hidden_instruments = [];
+  S.setup_manual = false;
   document.documentElement.dataset.theme = S.theme;
+  DEFAULT_PYTHON = state.python;
   S.python = S.python || state.python;
   $('version').textContent = state.version;
   $('lbl_home').textContent = state.lbl;
@@ -1491,11 +1540,11 @@ async function init() {
   document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
   $('scan').onclick = scan;
   $('data_dir').onkeydown = (event) => { if (event.key === 'Enter') scan(); };
-  $('instrument').onchange = async (event) => { S.instrument = event.target.value; S.instrument_set = true; fillSources(); save(); await loadInstrumentThings(); wrapEdited = false; };
-  $('source').onchange = async (event) => { S.source = event.target.value; save(); await loadInstrumentThings(); wrapEdited = false; };
-  $('python').onchange = (event) => { S.python = event.target.value.trim(); save(); };
+  $('instrument').onchange = async (event) => { S.instrument = event.target.value; S.instrument_set = true; S.setup_manual = true; fillSources(); save(); await loadInstrumentThings(); wrapEdited = false; drawSetupStatus(); };
+  $('source').onchange = async (event) => { S.source = event.target.value; S.setup_manual = true; save(); await loadInstrumentThings(); wrapEdited = false; drawSetupStatus(); };
+  $('python').onchange = (event) => { S.python = event.target.value.trim() || DEFAULT_PYTHON; $('python').value = S.python; save(); drawSetupStatus(); wrapEdited = false; };
   $('tick_all').onclick = () => { S.ticked = TARGETS.filter((row) => !S.hidden_instruments.includes(row.instrument)).map((row) => row.name); save(); drawTargets(); loadPoints(); drawPerTarget(); followTicked(); };
-  $('tick_none').onclick = () => { S.ticked = []; save(); drawTargets(); loadPoints(); drawPerTarget(); };
+  $('tick_none').onclick = () => { S.ticked = []; save(); drawTargets(); loadPoints(); drawPerTarget(); drawSetupStatus(); };
   const bound = (key) => (event) => { S[key] = event.target.value === '' ? null : Number(event.target.value); save(); drawPlots(); wrapEdited = false; };
   $('min_rjd').onchange = bound('min_rjd');
   $('max_rjd').onchange = bound('max_rjd');
