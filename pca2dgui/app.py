@@ -108,6 +108,8 @@ def suggest_name(state: dict, rparams: dict) -> str:
 class Handler(BaseHTTPRequestHandler):
     server_version = "lbl-gui/" + __version__
     ctx: Context = None
+    #: a HEAD request: the headers of a file, not its body
+    head = False
 
     # -- plumbing ------------------------------------------------------------
     def log_message(self, fmt, *args):            # quiet: the page is the log
@@ -135,7 +137,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        if not self.head:
+            self.wfile.write(body)
 
     def _body(self) -> dict:
         length = int(self.headers.get("Content-Length") or 0)
@@ -157,9 +160,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._file(os.path.join(STATIC, "index.html"),
                                   "text/html; charset=utf-8")
             if route == "/favicon.ico":
-                # asked by browsers whatever the page says
-                return self._file(os.path.join(STATIC, "favicon-32.png"),
-                                  "image/png")
+                # asked by browsers whatever the page says, and the only
+                #   icon Safari's tabs take: a true .ico (16 to 64 px)
+                return self._file(os.path.join(STATIC, "favicon.ico"),
+                                  "image/x-icon")
             if route.startswith("/static/"):
                 name = os.path.basename(route)
                 path = os.path.join(STATIC, name)
@@ -326,6 +330,16 @@ class Handler(BaseHTTPRequestHandler):
             return None
 
     # -- POST ----------------------------------------------------------------
+    def do_HEAD(self):                                    # noqa: N802
+        """The headers of the page or of a static file (a browser asks them
+        of an icon before taking it); the API answers GET only."""
+        route = urllib.parse.urlparse(self.path).path
+        if route not in ("/", "/index.html", "/favicon.ico") \
+                and not route.startswith("/static/"):
+            return self.send_error(HTTPStatus.METHOD_NOT_ALLOWED)
+        self.head = True
+        return self.do_GET()
+
     def do_POST(self):                                    # noqa: N802
         route = urllib.parse.urlparse(self.path).path
         body = self._body()

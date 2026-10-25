@@ -863,9 +863,9 @@ TEMPLATE = """<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon.ico?v=2" sizes="32x32">
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="guide.css">
 <script>
@@ -1233,7 +1233,8 @@ def main(site, shots=None, example=None):
         shutil.copyfile(os.path.join(THEMES, name), os.path.join(folder, name))
     # the window's own icon
     static = os.path.join(HERE, "..", "pca2dgui", "static")
-    for name in ("favicon.svg", "favicon-32.png", "apple-touch-icon.png"):
+    # (the .ico for Safari's tabs, which take no SVG)
+    for name in ("favicon.ico", "favicon.svg", "apple-touch-icon.png"):
         shutil.copyfile(os.path.join(static, name), os.path.join(folder, name))
     print("written: %s" % os.path.join(folder, "index.html"))
 
