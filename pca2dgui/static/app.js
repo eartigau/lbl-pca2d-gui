@@ -1279,8 +1279,11 @@ function drawSteps(steps, title) {
   holder.replaceChildren(...groups.map((group) => el('div', { class: 'step-group' },
     el('span', { class: 'step-obj mono', text: group.obj }),
     ...group.steps.map((step) => el('span', {
-      class: `step ${step.state || 'pending'}${step.at === undefined ? '' : ' linked'}`,
-      title: step.at === undefined ? null : t('step_goto'),
+      // a step going whose files are counted fills its pill as it goes
+      class: `step ${step.state || 'pending'}${step.at === undefined ? '' : ' linked'}${step.state === 'running' && step.progress !== undefined ? ' counted' : ''}`,
+      style: step.state === 'running' && step.progress !== undefined ? `--progress: ${(100 * step.progress).toFixed(1)}%` : null,
+      title: [step.at === undefined ? null : t('step_goto'),
+        step.state === 'running' && step.progress !== undefined ? `${Math.round(100 * step.progress)} %` : null].filter(Boolean).join(' · ') || null,
       onclick: step.at === undefined ? null : () => showStep(step),
     },
       step.state === 'running' ? el('span', { class: 'ring' })

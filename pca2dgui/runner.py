@@ -38,7 +38,14 @@ RECIPE = re.compile(r"^\s*LBL (Telluclean|Tellu ?Clean|Template|Mask|Compute"
 OBJECT = re.compile(r'^\s*OBJECT_SCIENCE="([^"]*)"')
 #: LBL's report, written at the end of an object's steps
 REPORT = re.compile(r"^Report written: ")
-COUNTER = re.compile(r"\bfile (\d+) of (\d+)\b")
+#: the counters a step goes through, and how far it is: LBL's telluric
+#:   cleaning and template ("for file 15 of 90"), compute ("Processing file
+#:   1 / 90"), compile's progress bar ("| 63/63 ["), PCA2D's cube and
+#:   correction ("reading spectra: 78/90 files", "correcting: 25/89 files")
+COUNTERS = (re.compile(r"\bfile (\d+) of (\d+)\b"),
+            re.compile(r"\bfile (\d+) / (\d+)\b"),
+            re.compile(r"\|\s*(\d+)/(\d+) \["),
+            re.compile(r"\b(\d+)/(\d+) files\b"))
 #: how long a run is given to stop before it is killed [s]
 GRACE = 10.0
 
@@ -183,9 +190,15 @@ class Job:
                 self.recipe = None
             if REPORT.search(message.strip()):
                 self._advance("report", done=True)
-            found = COUNTER.search(message)
+            found = next((m for m in (c.search(message) for c in COUNTERS)
+                          if m), None)
             if found:
                 self.counter = "%s / %s" % found.groups()
+                done, total = (int(v) for v in found.groups())
+                # how far the step going is, which its pill fills to
+                for step in self.steps:
+                    if step["state"] == "running" and total > 0:
+                        step["progress"] = min(1.0, done / total)
             if message.strip() and not transient:
                 self.status = message.strip()[:160]
             self.cond.notify_all()
@@ -201,7 +214,9 @@ class Job:
                 for before in self.steps[:index]:
                     if before["state"] in ("pending", "running"):
                         before["state"] = "done"
+                    before.pop("progress", None)
                 step["state"] = "done" if done else "running"
+                step.pop("progress", None)
                 # the event the log reached it at: a click on the step
                 #   shows that line
                 step.setdefault("at", len(self.events) - 1)

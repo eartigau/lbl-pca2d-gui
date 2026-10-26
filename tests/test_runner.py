@@ -147,6 +147,29 @@ def test_the_telluric_cleaning_shows_its_two_passes(tmp_path):
     assert [s["state"] for s in job.steps[:5]] == ["done"] * 4 + ["running"]
 
 
+def test_a_counted_step_says_how_far_it_is(tmp_path):
+    from pca2dgui import wrapgen
+    rparams = dict(OBJECT_SCIENCE=["GJ1214"], RUN_LBL_TELLUCLEAN=False,
+                   RUN_LBL_TEMPLATE=True, RUN_LBL_MASK=True,
+                   RUN_LBL_COMPUTE=True, RUN_LBL_COMPILE=True, REPORT=True)
+    job = runner.Job("x", "x", str(tmp_path), "wrap.py", "python",
+                     str(tmp_path), dict(steps=wrapgen.steps(rparams)))
+    for text in ("\tLBL Compute", '\tOBJECT_SCIENCE="GJ1214"',
+                 "Processing file 30 / 90   (60 left)"):
+        job.add(_line(text), False)
+    going = [s for s in job.steps if s["state"] == "running"]
+    assert going[0]["kind"] == "compute"
+    assert abs(going[0]["progress"] - 1 / 3) < 1e-9
+    # the next step starts empty, the one before is done without a bar
+    for text in ("\tLBL Compil", '\tOBJECT_SCIENCE="GJ1214"'):
+        job.add(_line(text), False)
+    compute = next(s for s in job.steps if s["kind"] == "compute")
+    assert compute["state"] == "done" and "progress" not in compute
+    job.add("100%|##########| 63/63 [00:02<00:00, 25.08it/s]", True)
+    going = [s for s in job.steps if s["state"] == "running"]
+    assert going[0]["kind"] == "compile" and going[0]["progress"] == 1.0
+
+
 def test_the_steps_tick_off_as_the_log_goes(tmp_path):
     from pca2dgui import wrapgen
     rparams = dict(OBJECT_SCIENCE=["TOI904"], RUN_LBL_TELLUCLEAN=False,

@@ -661,6 +661,12 @@ h2 .info { vertical-align: 3px; }
 .step-icon { font-weight: 700; width: 1em; text-align: center; }
 .step.done { color: #12936a; border-color: rgba(18, 147, 106, 0.45); background: rgba(18, 147, 106, 0.08); }
 .step.running { color: var(--text); border-color: #eb6834; box-shadow: 0 0 0 3px rgba(235, 104, 52, 0.18); }
+/* a step whose files are counted: its pill fills as it goes, the ring
+   still turning (runner.COUNTERS) */
+.step.running.counted {
+  background: linear-gradient(90deg, rgba(235, 104, 52, 0.42) var(--progress, 0%),
+    var(--input-bg) var(--progress, 0%));
+}
 
 .step.failed { color: #d03b3b; border-color: rgba(208, 59, 59, 0.55); background: rgba(208, 59, 59, 0.08); }
 .step.stopped { color: #b4700a; border-color: rgba(250, 178, 25, 0.55); }
