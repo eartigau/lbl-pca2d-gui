@@ -601,6 +601,8 @@ h2 .info { vertical-align: 3px; }
 
 /* ── cleanup ────────────────────────────────────────────────────────── */
 .kind-title { margin: 16px 0 6px; font-weight: 700; }
+.cleanup-select { margin: 2px 0 8px; }
+.cleanup-select .button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .kind-title .size { font-family: "IBM Plex Mono", monospace; color: var(--muted); font-weight: 400; margin-left: 8px; }
 
 /* ── modal ──────────────────────────────────────────────────────────── */

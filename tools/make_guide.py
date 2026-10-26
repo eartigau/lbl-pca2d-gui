@@ -762,7 +762,10 @@ next run that needs it, such as PCA2D's cubes), <em>rebuildable</em> (remade
 by running again: superseded corrections, corrected spectra, per-exposure
 velocities, templates, masks), <em>results</em> (rdb tables, reports,
 observer bases: kept) and <em>spectra</em> (never touched). Only the first
-two can be deleted, and only inside the data folder.</p>
+two can be deleted, and only inside the data folder. Above each of them, a
+button ticks the whole kind and one ticks each type in it (every
+per-exposure velocity, every mask...), with how many and how much; a second
+click unticks them, and what is ticked is said beside <em>Delete</em>.</p>
 <p><strong>References.</strong> The paper that describes LBL, then a list,
 not exhaustive, of the papers that used our codes: each one's title, its
 authors and its page on ADS.</p>
@@ -779,7 +782,11 @@ cubes de PCA2D), <em>refaisable</em> (refait en relançant : corrections
 remplacées, spectres corrigés, vitesses par pose, templates, masques),
 <em>résultats</em> (tables rdb, rapports, bases de l'observateur : gardés)
 et <em>spectres</em> (jamais touchés). Seules les deux premières se
-suppriment, et seulement dans le dossier de données.</p>
+suppriment, et seulement dans le dossier de données. Au-dessus de chacune,
+un bouton coche toute la catégorie et un autre chaque type qu'elle contient
+(toutes les vitesses par pose, tous les masques...), avec leur nombre et
+leur poids ; un second clic les décoche, et ce qui est coché est dit à côté
+de <em>Supprimer</em>.</p>
 <p><strong>Références.</strong> L'article qui décrit LBL, puis une liste
 non exhaustive des articles ayant utilisé nos codes : le titre de chacun,
 ses auteurs et sa page sur ADS.</p>

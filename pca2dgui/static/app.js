@@ -1536,9 +1536,26 @@ async function measure() {
     const total = items.reduce((sum, item) => sum + item.bytes, 0);
     parts.push(el('div', { class: 'kind-title' }, t(`kind_${kind}`), el('span', { class: 'size', text: `${t('total')} ${human(total)}` })));
     const deletable = kind === 'scratch' || kind === 'rebuildable';
+    // ONE CLICK FOR A WHOLE TYPE: every per-exposure velocity, every mask...;
+    //   a second click unticks them
+    if (deletable) {
+      const codes = [...new Set(items.map((item) => item.code))];
+      const button = (label, which, title) => el('button', {
+        type: 'button', class: 'button small', text: label, title,
+        'data-which': which, onclick: () => toggleCleanup(which),
+      });
+      parts.push(el('div', { class: 'row gap wrap cleanup-select' },
+        button(t('select_kind'), `[data-kind="${kind}"]`, t('select_kind_hint')),
+        ...codes.map((code) => {
+          const mine = items.filter((item) => item.code === code);
+          const size = mine.reduce((sum, item) => sum + item.bytes, 0);
+          return button(`${T[`type_${code}`] || code} (${mine.length}, ${human(size)})`,
+            `[data-kind="${kind}"][data-code="${code}"]`, t('select_type_hint'));
+        })));
+    }
     parts.push(el('div', { class: 'table-wrap' }, el('table', { class: 'data' },
       el('tbody', {}, items.map((item) => el('tr', {},
-        el('td', {}, deletable ? el('input', { type: 'checkbox', 'data-path': item.path }) : ''),
+        el('td', {}, deletable ? el('input', { type: 'checkbox', 'data-path': item.path, 'data-kind': kind, 'data-code': item.code }) : ''),
         el('td', { class: 'mono', text: relative(item.path) + (item.link ? ` → ${item.link}` : '') }),
         el('td', { class: 'muted small', text: T[`what_${item.code}`] || item.what }),
         el('td', { class: 'num', text: human(item.bytes) }),
@@ -1548,6 +1565,27 @@ async function measure() {
     parts.unshift(el('div', { class: 'message warning' }, t('busy', busy.map((p) => `pid ${p.pid}: ${p.command}`).join(' \u00B7 '))));
   }
   $('cleanup').replaceChildren(...parts);
+  cleanupSelection();
+}
+
+/* every box that matches `which`: all ticked if one was not, else none */
+function toggleCleanup(which) {
+  const boxes = [...document.querySelectorAll(`#cleanup input[type=checkbox]${which}`)];
+  const tick = boxes.some((box) => !box.checked);
+  boxes.forEach((box) => { box.checked = tick; });
+  cleanupSelection();
+}
+
+/* what is ticked, said beside Delete */
+function cleanupSelection() {
+  const paths = [...document.querySelectorAll('#cleanup input[type=checkbox]:checked')].map((box) => box.dataset.path);
+  const size = CLEANUP.filter((item) => paths.includes(item.path)).reduce((sum, item) => sum + item.bytes, 0);
+  $('cleanup_selected').textContent = paths.length ? t('selected_summary', paths.length, human(size)) : '';
+  // a type all ticked: its button lit
+  document.querySelectorAll('.cleanup-select button').forEach((button) => {
+    const boxes = [...document.querySelectorAll(`#cleanup input[type=checkbox]${button.dataset.which}`)];
+    button.classList.toggle('on', boxes.length > 0 && boxes.every((box) => box.checked));
+  });
 }
 
 async function deleteSelected() {
@@ -1659,6 +1697,7 @@ async function init() {
   $('archive_stop').onclick = async () => { ARCHIVE = await api.post('/api/archive/stop', {}); drawArchive(); };
   $('archive_search_stop').onclick = async () => { ARCHIVE = await api.post('/api/archive/search/stop', {}); drawArchive(); };
   $('delete').onclick = deleteSelected;
+  $('cleanup').addEventListener('change', cleanupSelection);
 
   await loadInstrumentThings();
   await loadTargets();
