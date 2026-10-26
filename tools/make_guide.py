@@ -721,7 +721,9 @@ starts it again from the tabs. <em>Save</em> writes it in the data folder;
 <p><strong>Run.</strong> The big button starts the run, and changes colour
 while it goes. One run at a time: a click during a run queues the next. The
 <strong>steps</strong>, between the wrap and the log, tick off as the log
-reaches them; click a step to jump to its place in the log. The
+reaches them, and one that goes through files (the telluric cleaning, the
+template, the velocities, the rdb table, PCA2D's cube and correction) fills
+as it goes; click a step to jump to its place in the log. The
 <strong>log</strong> keeps everything, with a scroll bar and two arrows to
 its top and bottom; scrolled up, it stops following the run, and at the
 bottom it follows again. <em>Stop</em> stops the run.</p>
@@ -736,8 +738,10 @@ relit un wrap dans les onglets (analysé, jamais exécuté).</p>
 <p><strong>Lancer.</strong> Le gros bouton lance le run, et change de
 couleur pendant qu'il tourne. Un run à la fois : un clic pendant un run met
 le suivant en file. Les <strong>étapes</strong>, entre le wrap et le
-journal, se cochent à mesure que le journal les atteint ; cliquez sur une
-étape pour aller à sa place dans le journal. Le <strong>journal</strong>
+journal, se cochent à mesure que le journal les atteint, et celle qui
+parcourt des fichiers (le nettoyage tellurique, le template, les vitesses,
+la table rdb, le cube et la correction de PCA2D) se remplit à mesure ;
+cliquez sur une étape pour aller à sa place dans le journal. Le <strong>journal</strong>
 garde tout, avec une barre de défilement et deux flèches vers son début et
 sa fin ; remonté, il cesse de suivre le run, et en bas il le suit de
 nouveau. <em>Arrêter</em> arrête le run.</p>
