@@ -1,5 +1,13 @@
 # lbl-gui
 
+> **Moved into LBL.** The window now lives inside LBL itself, branch
+> `lbl-pca2d` ([github.com/njcuk9999/lbl/tree/lbl-pca2d/lbl/gui](https://github.com/njcuk9999/lbl/tree/lbl-pca2d/lbl/gui)),
+> started with `lbl_gui`, and its archive search no longer needs koloa.
+> Install LBL's branch and nothing else (guide:
+> [eartigau.github.io/lbl-gui](https://eartigau.github.io/lbl-gui/)); if
+> this package was installed, remove it first: `pip uninstall lbl-pca2d-gui`.
+> This repository is kept for its history only.
+
 A browser window for running [LBL](https://github.com/njcuk9999/lbl), with or
 without the PCA2D precleaning (LBL's `lbl-pca2d` branch): pick the targets of
 a data folder, set LBL and PCA2D, run, and follow the run as it goes.
